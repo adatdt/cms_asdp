@@ -1,0 +1,195 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+/**
+ * -----------------------
+ * CLASS NAME : M_batch
+ * -----------------------
+ *
+ * @author     Arief Darmawan <ariefdwn.nutech@gmail.com>
+ * @copyright  2021
+ *
+ */
+
+class M_batch extends MY_Model
+{
+    public function __construct()
+    {
+        parent::__construct();
+        $this->_module = 'master_data/batch';
+    }
+
+    public function dataList(){
+        $start = $this->input->post('start');
+        $length = $this->input->post('length');
+        $draw = $this->input->post('draw');
+        $ship_class=$this->enc->decode($this->input->post('tipe_kapal'));
+        $status=$this->enc->decode($this->input->post('status'));
+        $order = $this->input->post('order');
+        $order_column = $order[0]['column'];
+        $order_dir = strtoupper($order[0]['dir']);
+		$searchName=$this->input->post('searchName');
+		$searchData=trim($this->input->post('searchData'));
+
+		$ilike= str_replace(array('"',"'"), "", $searchData);
+
+        if($this->get_identity_app()==0)
+		{
+			// mengambil port berdasarkan port di user menggunakan session
+            if(!empty($this->session->userdata('port_id')))
+            {
+                    $port=$this->session->userdata('port_id');
+            }
+            else
+            {
+                    $port = $this->enc->decode($this->input->post('pelabuhan'));
+            }
+		}
+		else
+		{
+			$port=$this->get_identity_app();
+		}
+
+        $field = array(
+            0 => 'id',
+            1 => 'batch_code',
+            2 => 'batch_name',
+            3 => 'port_name',
+            4 => 'ship_class_name',
+            5 => 'status',
+        );
+
+        $order_column = $field[$order_column];
+
+        $where = " WHERE tmb.status not in (-5) ";
+
+        if(!empty($port))
+		{
+			$where .= " and tmb.port_id  = ".$this->db->escape($port);
+        }
+
+        if(!empty($ship_class))
+		{
+			$where .= " and  tmb.ship_class  = ".$this->db->escape($ship_class);
+        }
+
+        if($status != null)
+		{
+			$where .=" and tmb.status = ".$this->db->escape($status);
+        }
+
+        if(!empty($searchData))
+		{
+			if($searchName=='batchCode')
+			{
+				$where .=" and tmb.batch_code ilike '%".$this->db->escape_like_str($ilike)."%' ESCAPE '!'";
+			}
+			else if($searchName=='batchName')
+			{
+				$where .=" and tmb.batch_name ilike '%".$this->db->escape_like_str($ilike)."%' ESCAPE '!'";
+			}
+		}
+
+
+        $sql = "
+            select
+            tmb.id, batch_code, batch_name,
+            port_id, tmp.name as port_name,
+            ship_class, tmsc.name as ship_class_name,
+            tmb.status
+            from app.t_mtr_batch tmb
+            left join app.t_mtr_port tmp on tmb.port_id = tmp.id and tmp.status = 1
+            left join app.t_mtr_ship_class tmsc on tmb.ship_class = tmsc.id and tmsc.status = 1
+            {$where}
+        ";
+
+        $count_sql = "
+            select count(*) as num_row
+            from app.t_mtr_batch tmb
+            left join app.t_mtr_port tmp on tmb.port_id = tmp.id and tmp.status = 1
+            left join app.t_mtr_ship_class tmsc on tmb.ship_class = tmsc.id and tmsc.status = 1
+            {$where}
+        ";
+
+        $count_query = $this->db->query($count_sql)->row();
+        $records_total = $count_query->num_row;
+
+        $sql .= " ORDER BY ".$order_column." {$order_dir}";
+
+        if ($length != -1) {
+            $sql .=" LIMIT {$length} OFFSET {$start}";
+        }
+
+        $query = $this->db->query($sql);
+        $rows_data = $query->result();
+
+        $rows = array();
+        $i = ($start + 1);
+
+        foreach ($rows_data as $row) {
+            $id_enc = $this->enc->encode($row->id);
+            $row->number = $i;
+            $nonaktif = site_url($this->_module."/action_change/".$this->enc->encode($row->id.'|0'));
+            $aktif = site_url($this->_module."/action_change/".$this->enc->encode($row->id.'|1'));
+
+            $row->id = $row->id;
+            $edit_url = site_url($this->_module."/edit/{$id_enc}");
+            $delete_url = site_url($this->_module."/action_delete/{$id_enc}");
+
+            $row->actions = " ";
+            if ($row->status == 1) {
+                $row->actions .= generate_button_new($this->_module, 'edit', $edit_url);
+                $row->status = success_label('Aktif');
+                $row->actions .= generate_button($this->_module, 'delete', '<button class="btn btn-sm btn-danger" onclick="confirmationAction(\'Apakah Anda yakin akan menonaktifkan data ini ?\', \''.$nonaktif.'\')" title="Nonaktifkan"> <i class="fa fa-ban"></i> </button> ');
+            }
+            else {
+                $row->status = failed_label('Tidak Aktif');
+                $row->actions .= generate_button($this->_module, 'delete', '<button class="btn btn-sm btn-primary" onclick="confirmationAction(\'Apakah Anda yakin mengaktifkan data ini ?\', \''.$aktif.'\')" title="Aktifkan"> <i class="fa fa-check"></i> </button> ');
+            }
+
+            $row->no = $i;
+            $row->actions .= generate_button_new($this->_module, 'delete', $delete_url);
+
+            $rows[] = $row;
+
+            $i++;
+        }
+
+        return array(
+            'draw'           => $draw,
+            'recordsTotal'   => $records_total,
+            'recordsFiltered'=> $records_total,
+            'data'           => $rows,
+            $this->security->get_csrf_token_name() => $this->security->get_csrf_hash(),
+        );
+    }
+
+    public function select_data($table, $where)
+    {
+        return $this->db->query("select * from $table $where");
+    }
+
+    public function insert_data($table, $data)
+    {
+        $this->db->insert($table, $data);
+    }
+
+    public function update_data($table, $data, $where)
+    {
+        $this->db->where($where);
+        $this->db->update($table, $data);
+    }
+
+    public function delete_data($table, $data, $where)
+    {
+        $this->db->where($where);
+        $this->db->delete($table, $data);
+    }
+
+    public function get_identity_app()
+	{
+		$data=$this->db->query(" select * from app.t_mtr_identity_app")->row();
+
+		return $data->port_id;
+	}
+}

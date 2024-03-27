@@ -1,0 +1,113 @@
+<?php
+defined('BASEPATH') or exit('No direct script access allowed');
+
+class Dashboard extends MY_Controller {
+
+    public function __construct() {
+        parent::__construct();
+        $this->load->model('dashboard_model', 'dashboard');
+
+        $this->dbView=checkReplication();
+        // $this->dbView = $this->load->database("dbView", TRUE);        
+        $this->dbAction = $this->load->database("dbAction", TRUE);
+    }
+
+    function index() {
+        checkUrlAccess(uri_string(),'view');
+
+        $data = array(
+            'home'      => 'Home',
+            'url_home'  => site_url('home'),
+            'title'     => 'Dashboard',
+            'content'   => 'index',
+            'port'      => form_dropdown('', $this->dashboard->list_port(), '', 'id="origin" class="form-control select2"'),
+            'ship'      => form_dropdown('', $this->dashboard->list_kelas(), '', 'id="ship" class="form-control select2"'),
+        );
+
+        $this->load->view('default', $data);
+    }
+
+    function listDashboard(){
+        validate_ajax();
+        $post = $this->input->post();
+
+        if($post['date'] > $post['date2']){
+            $response = json_api(0,'Start date lebih besar dari end date');
+        }else{
+            $diff = date_diff(date_create($post['date']),date_create($post['date2']));
+            $d    = $diff->format('%a');
+
+            if($d > 6){
+                $day = $d;
+            }else{
+                $day = 6;
+            }
+
+            $data = array(
+                'total_passenger' => $this->dashboard->get_total_trx_booking(),
+                'total_vehicle' => $this->dashboard->get_total_trx_booking(true),
+                'boarding_passenger' => $this->dashboard->get_total_trx_boarding(),
+                'boarding_vehicle' => $this->dashboard->get_total_trx_boarding_vehicle(),
+                'volume_ticket' => array(
+                    'ticket' => array('Go Show','Online'),
+                    'total' => array(
+                        array('value' => $this->dashboard->get_ticket_volume(false), 'name' => 'Go Show'),
+                        array('value' => $this->dashboard->get_ticket_volume(true), 'name' => 'Online'),
+                    )
+                ),
+                'revenue_ticket' => array(
+                    'ticket' => array('Go Show','Online'),
+                    'total' => array(
+                        array('value' => $this->dashboard->get_ticket_revenue(false), 'name' => 'Go Show'),
+                        array('value' => $this->dashboard->get_ticket_revenue(true), 'name' => 'Online'),
+                    )
+                ),
+                'days' => $this->dashboard->get_trx_days($day)
+            );
+
+            $response = json_api(1,'List Dasboard',$data);
+        }
+
+        echo $response;
+    }
+
+    public function reservasi(){
+        checkUrlAccess(uri_string(),'view');
+
+        $data = array(
+            'home'      => 'Home',
+            'url_home'  => site_url('home'),
+            'title'     => 'Dashboard',
+            'content'   => 'reservasi/index',
+            'port'      => form_dropdown('', $this->dashboard->list_port(), '', 'id="origin" class="form-control select2"'),
+            'kelas'      => form_dropdown('', $this->dashboard->list_kelas(), '', 'id="kelas" class="form-control select2"')
+        );
+
+        $this->load->view('default', $data);
+    }
+    function listReservasi(){
+        validate_ajax();
+        $post = $this->input->post();
+
+        if($post['date'] > $post['date2']){
+            $response = json_api(0,'Start date lebih besar dari end date');
+        }else{
+            $diff = date_diff(date_create($post['date']),date_create($post['date2']));
+            $d    = $diff->format('%a');
+
+            if($d > 6){
+                $day = $d;
+            }else{
+                $day = 6;
+            }
+
+            $data = array(
+                'reservasi' => $this->dashboard->getReservasi()
+            );
+
+            $response = json_api(1,'List Dasboard',$data);
+        }
+
+        echo $response;
+    }
+}

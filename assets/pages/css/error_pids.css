@@ -1,0 +1,13 @@
+body.page-404-full-page:before {
+  content             : "";
+  position            : absolute;
+  width               : 100%;
+  height              : 100%;
+  opacity             : .8;
+  background-image    : url(../../../assets/img/logo.png);
+  background-repeat   : no-repeat;
+  background-position : center;
+  background-size     : auto;
+  filter              : alpha(opacity=40);
+  /* top: 60%; */
+}

@@ -1,0 +1,295 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+/**
+ * -----------------------
+ * CLASS NAME : Port_model
+ * -----------------------
+ *
+ * @author     Robai <robai.rastim@gmail.com>
+ * @copyright  2018
+ *
+ */
+
+class M_schedule extends MY_Model{
+
+	public function __construct() {
+		parent::__construct();
+        $this->_module = 'pelabuhan/schedule';
+	}
+
+    public function dataList(){
+
+
+		$start = $this->input->post('start');
+		$length = $this->input->post('length');
+		$draw = $this->input->post('draw');
+		$search = $this->input->post('search');
+		// $port_id=$this->enc->decode($this->input->post('port'));
+		$dock_id=$this->enc->decode($this->input->post('dock'));
+		$class_id=$this->enc->decode($this->input->post('class'));
+		$ship_id=$this->enc->decode($this->input->post('ship'));
+		$dateTo=trim($this->input->post('dateTo'));
+		$dateFrom=trim($this->input->post('dateFrom'));
+		$order = $this->input->post('order');
+		$order_column = $order[0]['column'];
+		$order_dir = strtoupper($order[0]['dir']);
+		$iLike        = trim(strtoupper($this->db->escape_like_str($search['value'])));
+
+
+		
+		$field = array(
+			0 =>'id',
+			1 =>'schedule_date',
+			2 =>'schedule_code',
+			3 =>'ship_name',
+			4 =>'ship_class',
+			5 =>'port_name',
+			6 =>'dock_name',
+			7 =>'trip',
+			8 =>'docking_on',
+			9 =>'open_boarding_on',
+			10 =>'close_boarding_on',
+			11=>'close_rampdoor_on',
+			12=>'sail_time'
+		);
+
+		if($this->get_identity_app()==0)
+		{
+			if(empty($this->session->userdata("port_id")))
+			{
+				$port_id=$this->enc->decode($this->input->post('port'));
+			}
+			else
+			{
+				$port_id=$this->session->userdata("port_id");
+			}
+		}
+		else
+		{
+			$port_id=$this->get_identity_app();
+		}
+
+		$order_column = $field[$order_column];
+
+		$where = " WHERE a.status not in (-5)";
+
+		if (!empty($dock_id))
+		{
+			$where .="and (a.dock_id=".$dock_id.")";
+		}
+
+		if (!empty($port_id))
+		{
+			$where .="and (a.port_id=".$port_id.")";
+		}
+
+		if (!empty($ship_id))
+		{
+			$where .="and (a.ship_id=".$ship_id.")";
+		}
+
+		if (!empty($class_id))
+		{
+			$where .="and (a.ship_class=".$class_id.")";
+		}
+
+		if (!empty($dateTo) and !empty($dateFrom))
+		{
+			$where .="and (a.schedule_date between '".$dateFrom."' and '".$dateTo."' )";
+		}
+		else if(empty($dateFrom) and !empty($dateTo))
+		{
+			$where .="and (a.schedule_date between '".$dateTo."' and '".$dateTo."' )";	
+		}
+		else if (!empty($dateFrom) and empty($dateTo))
+		{
+			$where .="and (a.schedule_date between '".$dateFrom."' and '".$dateFrom."' )";	
+		}
+		else
+		{
+			$where .="and (a.schedule_date between '".date("Y-m-d")."' and '".date('Y-m-d',strtotime("-7 days"))."' )";		
+		}
+
+		if (!empty($search['value'])){
+			$where .="and (a.schedule_code ilike '%".$iLike."%'
+							or d.name ilike '%".$iLike."%' 
+							)";
+		}
+
+		$sql 		   = " select e.name as ship_class_name, d.name as ship_name, c.name as dock_name, b.name as port_name, a.* from app.t_mtr_schedule a
+							left join app.t_mtr_port b on a.port_id=b.id
+							left join app.t_mtr_dock c on a.dock_id=c.id
+							left join app.t_mtr_ship d on a.ship_id=d.id
+							left join app.t_mtr_ship_class e on a.ship_class=e.id
+							 {$where}";
+
+		$query         = $this->db->query($sql);
+		$records_total = $query->num_rows();
+		$sql 		  .= " ORDER BY ".$order_column." {$order_dir}";
+
+		if($length != -1){
+			$sql .=" LIMIT {$length} OFFSET {$start}";
+		}
+
+		$query     = $this->db->query($sql);
+		$rows_data = $query->result();
+
+		$rows 	= array();
+		$i  	= ($start + 1);
+
+		foreach ($rows_data as $row) {
+			$row->number = $i;
+			$nonaktif    = site_url($this->_module."/disable/".$this->enc->encode($row->id.'|0'));
+     		$aktif       = site_url($this->_module."/enable/".$this->enc->encode($row->id.'|1|'.$row->ship_id."|".$row->port_id));
+
+			$row->id 	 = $this->enc->encode($row->id);
+			$edit_url 	 = site_url($this->_module."/edit/{$row->id}");
+     		$delete_url  = site_url($this->_module."/action_delete/{$row->id}");
+
+     		$trx_schedule=$this->db->query("select * from app.t_trx_schedule where schedule_code='".$row->schedule_code."'")->row();
+
+     		$row->actions="";
+
+     		if(!empty($trx_schedule->ploting_date) || !empty($trx_schedule->docking_date) || !empty($trx_schedule->open_boarding_date) || !empty($trx_schedule->close_boarding_date) || !empty($trx_schedule->close_rampdoor_date) ||!empty($trx_schedule->sail_date))
+     		{
+
+     			$row->actions  .="";
+     		}
+     		else
+     		{
+     			$row->actions  .= generate_button_new($this->_module, 'edit', $edit_url);	
+     		}
+
+
+
+			if($row->status == 1){
+				$row->status   = success_label('Aktif');
+				// $row->actions .= generate_button($this->_module, 'delete', '<button class="btn btn-sm btn-danger" onclick="confirmationAction(\'Apakah Anda yakin akan menonaktifkan data ini ?\', '."'".$nonaktif."'".')" title="Nonaktifkan"> <i class="fa fa-ban"></i> </button> ');
+			}
+			else
+			{
+				$row->status   = failed_label('Tidak Aktif');
+				// $row->actions .= generate_button($this->_module, 'delete', '<button class="btn btn-sm btn-primary" onclick="confirmationAction(\'Apakah Anda yakin mengaktifkan data ini ?\', '."'".$aktif."'".')" title="Nonaktifkan"> <i class="fa fa-check"></i> </button> ');
+			}
+     		
+     		$row->no=$i;
+     		// $row->actions .= generate_button_new($this->_module, 'delete', $delete_url);
+     		$row->docking_on = format_dateTime($row->docking_on);
+     		$row->open_boarding_on = empty($row->open_boarding_on)?"":format_dateTime($row->open_boarding_on);
+     		$row->close_boarding_on = empty($row->close_boarding_on)?"":format_dateTime($row->close_boarding_on);
+     		$row->close_rampdoor_on = empty($row->close_rampdoor_on)?"":format_dateTime($row->close_rampdoor_on);
+     		$row->sail_time = empty($row->sail_time)?"":format_dateTime($row->sail_time);
+     		// $row->ship_class=$row->ship_class==1?'REGULER':'EKSEKUTIF';
+     		$row->ship_class=$row->ship_class_name;
+     		$row->schedule_date=format_date($row->schedule_date);
+
+			$rows[] = $row;
+			unset($row->id);
+
+			$i++;
+		}
+
+		return array(
+			'draw'           => $draw,
+			'recordsTotal'   => $records_total,
+			'recordsFiltered'=> $records_total,
+			'data'           => $rows
+		);
+	}
+
+	public function val_dock($where)
+	{
+		return $this->db->query("select b.name, a.id as dock_id, a.* from app.t_mtr_dock a
+		join app.t_mtr_port b on a.port_id=b.id
+		 $where ");
+	}
+
+	public function get_byCode($code){
+		$query = $this->db->query("SELECT port_code FROM t_mtr_port WHERE port_code = '$code' and status = 1");
+		return $query->row();
+	}
+	
+	public function get_prov(){
+		return $this->db->query("select * from public.t_mtr_province order by name asc")->result();
+	}
+	
+	public function get_area($id){
+		return $this->db->query("select * from public.t_mtr_city where province_id='$id' order by name asc")->result();
+	}
+	
+	public function get_district($id){
+		return $this->db->query("select * from public.t_mtr_district where city_id='$id' order by name asc")->result();
+	}
+
+	// join pairing antara ship_area , ship_sailing_company dan ship
+	public function getPairingShip($port)
+	{
+		return $this->db->query("
+			SELECT b.ship_company_id,  b.name, a.* from app.t_mtr_ship_area a
+			left join app.t_mtr_ship b on a.ship_id=b.id and b.status=1
+			left join app.t_mtr_ship_company c on b.ship_company_id=c.id and c.status=1 
+			join ( select distinct on (company_id) company_id, port_id,  status from 
+					   app.t_mtr_sailing_company  	where port_id='{$port}' and status=1
+					   group by company_id, port_id , status 
+					  ) d on b.ship_company_id=d.company_id
+			where a.port_id='{$port}' and a.status=1
+		");	
+	}
+
+	public function ship()
+	{
+		return $this->db->query("SELECT b.name as ship_class_name, a.* from app.t_mtr_ship a
+									left join app.t_mtr_ship_class b on a.ship_class=b.id and b.status=1
+									where a.status=1");
+	}
+
+	public function checkShipSailing($shipId, $portId)
+	{
+		$qry = "
+				select 
+				count (tmsc.segment_code) as count_data
+			from app.t_mtr_sailing_company tmsc 
+			join app.t_mtr_ship tms on tmsc .company_id = tms .ship_company_id
+			where tms.id='{$shipId}' and tmsc.port_id ='{$portId}' and tmsc.status=1
+		";
+
+		$data = $this->db->query($qry)->row();
+
+		$returnData = $data->count_data>0?0:1;
+
+		return  $returnData;
+		
+
+	}
+
+	public function select_data($table, $where)
+	{
+		return $this->db->query("select * from $table $where");
+	}
+
+	public function insert_data($table,$data)
+	{
+		$this->db->insert($table, $data);
+	}
+
+	public function update_data($table,$data,$where)
+	{
+		$this->db->where($where);
+		$this->db->update($table, $data);
+	}
+
+	public function delete_data($table,$data,$where)
+	{
+		$this->db->where($where);
+		$this->db->delete($table, $data);
+	}
+
+	public function get_identity_app()
+	{
+		$data=$this->db->query(" select * from app.t_mtr_identity_app")->row();
+		return $data->port_id;
+	}
+
+
+}

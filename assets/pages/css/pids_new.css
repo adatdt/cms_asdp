@@ -1,0 +1,700 @@
+/*
+    Document   : pids_new
+    Created on : Oct 12, 2016, 9:07:27 AM
+    Author     : seagate
+    Description:
+        Purpose of the stylesheet follows.
+*/
+
+.delay {
+    color: #FF0000;
+    text-shadow: black 2px 2px 2px;
+}
+
+.on-schedule {
+    color: #76ff03 !important;
+    text-shadow: black 2px 2px 2px;
+}
+
+root {
+    display: block;
+}
+
+.digits {
+    height: 100%;
+    padding: 6%;
+}
+
+body {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    background-color: #000 !important;
+    color: #fff !important;
+}
+
+.page-wrapper {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+}
+
+.bg-grey {
+    background: #e5e5e5;
+    color: #000;
+}
+
+.odd {
+    background: rgb(73,66,144);
+    color: #fff;
+    text-align: center;
+    font-weight: 700;
+}
+
+.even {
+    background-color: rgb(124, 162, 199) !important;
+    color: #fff;
+    text-align: center;
+    font-weight: 700;
+}
+
+.bg-orange {
+    background-color: rgb(233, 146, 5);
+    color: #000;
+}
+
+.bg-orange-lighten-3, .even {
+    background-color: #ffcc80;
+    color: #fff;
+}
+
+.top-content {
+    margin: 0;
+    background: linear-gradient(rgb(124, 162, 199), rgb(73, 66, 144));
+    padding: 1% 0;
+    position: fixed;
+    width: 100%;
+    top: 0;
+}
+
+.top-content .row {
+    margin: 0 1%;
+}
+
+.top-content h1 {
+    font-weight: bolder;
+    text-shadow: 3px 3px 5px #000;
+}
+
+.top-content h4 {
+  font-size: 22px;
+  font-weight: 700;
+  text-shadow: 2px 2px 10px #000;
+}
+
+.top-content .col-md-2.col-lg-2.col-xlg-2.col-fhd-2 {
+    padding: 1%;
+    /*border-radius: 10px !important;*/
+    /*background: #fff;*/
+    /*box-shadow: 0 0 0.3vw 0.3vw rgb(233, 146, 5);*/
+}
+
+.center-content {
+    margin: 0;
+    position: fixed;
+    width: 100%;
+    height: 75%;
+    top: 18%;
+}
+
+.center-content .row {
+    height: 100%;
+}
+
+.center-content .row .left .table-responsive {
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
+    border: none;
+    margin: 0 0!important;
+}
+
+.table-scrollable {
+    width: 100%;
+    overflow-x: hidden !important;
+    overflow-y: hidden !important;
+    border: none !important;
+    margin: 0!important;
+}
+
+.right .embed-responsive .embed-responsive-item, .right .embed-responsive embed, .right .embed-responsive iframe, .right .embed-responsive object, .right .embed-responsive video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    height: 75%;
+    width: 100%;
+    border: 0;
+}
+
+.table-scrollable>table>thead>tr>th {
+    font-size: 20px;
+    color: #fff;
+    padding-right: 6px !important;
+}
+
+.table-scrollable>table>tbody>tr>td {
+    font-size: 16px;
+    padding-right: 6px !important;
+}
+
+.table-scrollable>table>thead>tr>th>em {
+    font-size: 14px;
+    font-weight: 400;
+}
+
+@media (min-width: 1280px) {
+    .center-content {
+        margin: 0;
+        position: fixed;
+        top: 18.5%;
+    }
+    .table-scrollable>table>thead>tr>th {
+        font-size: 18px;
+    }
+    .table-scrollable>table>tbody>tr>td {
+        font-size: 15px;
+    }
+    .table-scrollable>.table-condensed>tbody>tr>td {
+        padding: 6px;
+    }
+}
+
+@media (min-width: 1280px) and (min-height: 1024px) {
+    .center-content {
+        margin: 0;
+        position: fixed;
+        top: 13.5%;
+        height: 81%;
+    }
+    .center-content .left {
+        position: fixed;
+        left: 0;
+        height: 81% !important;
+        overflow: hidden;
+        padding: 0;
+    }
+    .table-scrollable>table>thead>tr>th {
+        font-size: 16px;
+    }
+    .table-scrollable>table>tbody>tr>td {
+        font-size: 14px;
+    }
+    .table-scrollable>table>thead>tr>th>em {
+        font-size: 14px;
+        font-weight: 400;
+    }
+    .table-scrollable>.table-condensed>tbody>tr>td {
+        padding: 6px;
+    }
+    .ticker-container {
+        height: 4%;
+        text-align: left;
+        margin-bottom: 0;
+        font-size: 1.3em !important;
+    }
+    .ticker-container ul div li {
+        padding: 0.7% 0 !important;
+    }
+    .ticker-container .ticker-caption {
+        height: 100%;
+        width: 150px;
+        background: url(../../global/plugins/newsticker/ticker-caption-bg-orange.png) no-repeat;
+        background-size: 100% 100% !important;
+    }
+}
+
+@media (min-width: 1600px) and (min-height: 1020px) {
+    .center-content {
+        top: 14.5% !important;
+        height: 80% !important;
+    }
+    .center-content .left {
+        position: fixed;
+        left: 0;
+        height: 81% !important;
+        overflow: hidden;
+        padding: 0;
+    }
+    .table-scrollable>table>thead>tr>th {
+        font-size: 16px;
+    }
+    .table-scrollable>table>tbody>tr>td {
+        font-size: 14px;
+    }
+    .table-scrollable>table>thead>tr>th>em {
+        font-size: 14px;
+        font-weight: 400;
+    }
+    .table-scrollable>.table-condensed>tbody>tr>td {
+        padding: 6px;
+    }
+}
+
+@media (min-width: 1600px) and (min-height: 1100px) {
+    .top-content h4 {
+        font-size: 22px;
+        font-weight: 600;
+    }
+    .center-content {
+        top: 12.5% !important;
+        height: 82% !important;
+    }
+    .center-content .left {
+        position: fixed;
+        left: 0;
+        height: 81% !important;
+        overflow: hidden;
+        padding: 0;
+    }
+    .table-scrollable>table>thead>tr>th {
+        font-size: 21px !important;
+    }
+    .table-scrollable>table>tbody>tr>td {
+        font-size: 18px !important;
+    }
+    .table-scrollable>table>thead>tr>th>em {
+        font-size: 16px;
+        font-weight: 500;
+    }
+    .table-scrollable>.table-condensed>tbody>tr>td {
+        padding: 6px;
+    }
+    .ticker-container .ticker-caption {
+        height: 100%;
+        width: 165px !important;
+        background: url(../../global/plugins/newsticker/ticker-caption-bg-orange.png) no-repeat;
+        background-size: 100% 100% !important;
+    }
+    .ticker-container ul div {
+        height: 100%;
+        left: 180px !important;
+    }
+    .ticker-container {
+        height: 3.4% !important;
+        text-align: left;
+        margin-bottom: 0;
+        font-size: 1.5em !important;
+    }
+    .ticker-container ul div li {
+        padding: 0.7% 0 !important;
+    }
+    .lead {
+        font-size: 24px;
+    }
+}
+
+@media (min-width: 1360px) {
+    .center-content {
+        margin: 0;
+        position: fixed;
+        top: 19.5%;
+    }
+    .table-scrollable>.table-condensed>tbody>tr>td {
+        padding: 7.7px;
+    }
+    .table-scrollable>table>thead>tr>th {
+        font-size: 19px;
+    }
+    .table-scrollable>table>tbody>tr>td {
+        font-size: 16px;
+    }
+}
+
+@media (min-width: 1440px) {
+    .center-content {
+        top: 19.5%;
+        height: 78%;
+    }
+    .center-content .left {
+        height: 78% !important;
+    }
+    .table-scrollable>table>thead>tr>th {
+        font-size: 21px;
+    }
+    .table-scrollable>.table-condensed>tbody>tr>td {
+        padding: 6.7px;
+    }
+    .table-scrollable>table>tbody>tr>td {
+        font-size: 18px;
+    }
+    .ticker-container .ticker-caption {
+        height: 100%;
+        width: 150px;
+        background: url(../../global/plugins/newsticker/ticker-caption-bg-orange.png) no-repeat;
+        background-size: 100% 100% !important;
+    }
+    .ticker-container ul div li {
+        padding: 0.4% 0 !important;
+    }
+    .ticker-container {
+        height: 4%;
+        text-align: left;
+        margin-bottom: 0;
+        font-size: 1.2em;
+    }
+}
+
+@media (min-width: 1920px) and (min-height: 1080px) {
+    #weather {
+        padding: 4% !important;
+    }
+    .center-content {
+        margin: 0;
+        position: fixed;
+        top: 18% !important;
+        height: 77% !important;
+    }
+    .center-content .left {
+        position: fixed;
+        left: 0;
+        height: 76% !important;
+        overflow: hidden;
+        padding: 0;
+    }
+    .top-content img {
+        width: 100%;
+    }
+    .top-content h1 {
+        font-size: 44px;
+    }
+    .top-content h4 {
+        font-size: 34px;
+    }
+    .table-scrollable>.table-condensed>tbody>tr>td {
+        padding: 8.3px;
+    }
+    .table-scrollable>table>thead>tr>th {
+        font-size: 26px;
+    }
+    .table-scrollable>table>thead>tr>th>em {
+        font-size: 22px;
+        font-weight: 600;
+    }
+    .table-scrollable>table>tbody>tr>td {
+        font-size: 21px;
+    }
+    #clock {
+        width: 100% !important;
+        padding: 3% !important;
+        margin: 0;
+        position: relative;
+        height: 100% !important;
+    }
+    .digits {
+        height: 100% !important;
+        padding: 1% !important;
+        width: 100% !important;
+    }
+    #clock .digits div {
+        text-align: left !important;
+        position: relative !important;
+        width: 12% !important;
+        height: 8vh !important;
+        display: inline-block !important;
+        margin: 0 4px !important;
+    }
+    #clock .digits .d1 {
+        height: 5px !important;
+        width: 76% !important;
+        top: 0 !important;
+        left: 6px !important;
+    }
+    #clock .digits .d2 {
+        height: 5px !important;
+        width: 76% !important;
+        top: 50% !important;
+        left: 6px !important;
+    }
+    #clock .digits .d3 {
+        height: 5px !important;
+        width: 76% !important;
+        top: 100% !important;
+        left: 6px !important;
+    }
+    #clock .digits .d4 {
+        width: 5px !important;
+        height: 38% !important;
+        top: 10% !important;
+        left: 0 !important;
+    }
+    #clock .digits .d5 {
+        width: 5px !important;
+        height: 38% !important;
+        top: 10% !important;
+        right: 0 !important;
+    }
+    #clock .digits .d6 {
+        width: 5px !important;
+        height: 38% !important;
+        top: 59% !important;
+        left: 0 !important;
+    }
+    #clock .digits .d7 {
+        width: 5px !important;
+        height: 38% !important;
+        top: 59% !important;
+        right: 0 !important;
+    }
+    #clock .digits div.dots::before, #clock .digits div.dots::after {
+        width: 5px !important;
+        height: 5px !important;
+        content: '';
+        position: absolute !important;
+        left: 40% !important;
+        top: 30% !important;
+    }
+    #clock .digits div.dots::after {
+        top: 70% !important;
+    }
+    #clock .digits div.dots {
+        width: 6% !important;
+    }
+    .ticker-container .row ul div li {
+        width: 100% !important;
+    }
+}
+
+@media (min-width: 1920px) and (min-height: 1180px) {
+    .ticker-container .ticker-caption {
+        background-size: 100% 100% !important;
+    }
+    .center-content {
+        top: 16.5% !important;
+        height: 79% !important;
+    }
+}
+
+.center-content .left {
+    position: fixed;
+    left: 0;
+    height: 76%;
+    overflow: hidden;
+    padding: 0;
+}
+
+.center-content .right {
+    position: fixed;
+    right: 0;
+    padding-right: 0;
+}
+
+.ticker-container {
+    height: 5%;
+    width: 100%;
+    text-align: center;
+    position: fixed;
+    overflow: hidden;
+    background-color: rgb(73, 66, 144);
+    color: #fff;
+    /*background-color: white;
+    color: black;*/
+    font-size: 1.3em;
+    margin-bottom: 0;
+    bottom: 0;
+    left: 0;
+}
+
+.ticker-container .ticker-caption {
+    height: 10%;
+    width: 100%;
+    background: url('../../global/plugins/newsticker/ticker-caption-bg-orange.png') no-repeat;
+    display: table;
+    position: absolute;
+    color: white;
+    font-size: 0.8em;
+    z-index: 1;
+}
+
+.ticker-container .ticker-caption p {
+    height: inherit;
+    width: inherit;
+    display: table-cell;
+    vertical-align: middle;
+    font-weight: bold;
+}
+
+.ticker-container ul {
+    list-style: none;
+    padding: 0;
+    height: auto;
+}
+
+.ticker-container ul div {
+    overflow: hidden;
+    position: absolute;
+    z-index: 0;
+    display: inline;
+    min-width: 100%;
+    left: 0;
+    height: 50%;
+    transition: 0.25s ease-in-out;
+}
+
+.ticker-container ul div.ticker-active {
+    top: 30px;
+}
+
+.ticker-container ul div.not-active {
+    top: 60px;
+}
+
+.ticker-container ul div.remove {
+    top: 0;
+}
+
+.ticker-container ul div li {
+    padding: 0;
+}
+
+.ticker-container ul div li a {
+    color: #EC0B43;
+}
+
+@media (min-width: 1280px) {
+    .ticker-container {
+        height: 4%;
+        text-align: left;
+        margin-bottom: 0;
+        font-size: 1em;
+    }
+    .ticker-container .ticker-caption {
+        height: 100%;
+        width: 150px;
+        background: url('../../global/plugins/newsticker/ticker-caption-bg-orange.png') no-repeat;
+    }
+    .ticker-container .ticker-caption p {
+        text-align: left;
+        padding-left: 7px;
+    }
+    .ticker-container ul {
+        margin-left: 170px;
+        height: 100%;
+    }
+    .ticker-container ul div {
+        height: 100%;
+        left: 170px;
+    }
+    .ticker-container ul div li {
+        padding: 0.4% 0;
+    }
+    .ticker-container ul div.ticker-active {
+        top: 0;
+    }
+    .ticker-container ul div.not-active {
+        top: 30px;
+    }
+    .ticker-container ul div.remove {
+        top: -30px;
+    }
+}
+
+@media (min-width: 1360px) {
+    .ticker-container {
+        height: 3.5%;
+        text-align: left;
+        margin-bottom: 0;
+    }
+    .ticker-container {
+        height: 3.9%;
+        text-align: left;
+        margin-bottom: 0;
+        font-size: 1.2em;
+    }
+    .ticker-container ul div li {
+        padding: 0.2% 0;
+    }
+}
+
+@media (min-width: 1920px) {
+    .ticker-container {
+        height: 3.5%;
+        text-align: left;
+        margin-bottom: 0;
+        font-size: 1.5em;
+    }
+    .ticker-container ul div.not-active {
+        top: 100%;
+    }
+    .ticker-container .ticker-caption {
+        height: 100%;
+        /* width: 100%; */
+        background: url('../../global/plugins/newsticker/ticker-caption-bg-orange.png') no-repeat;
+        background-size: 100% 100% !important;
+    }
+}
+
+#weather {
+    width: auto;
+    margin: 0px auto;
+    margin-bottom: 12.5px;
+    background: linear-gradient(rgb(124, 162, 199), rgb(73, 66, 144));
+    text-align: center;
+    text-transform: uppercase;
+    padding: 5%;
+    height: 68.4%;
+    margin-top: -17%;
+}
+
+#weather li.next-day {
+    margin: 1%;
+    width: 100%;
+}
+
+li.next-day>div {
+    margin: 0 0 0 10%;
+    display: inherit;
+}
+
+li.next-day>div.li-text {
+    margin: 0 10% 0 0;
+    width: 25%;
+    text-align: left;
+}
+
+#weather h2 {
+    margin: 0 0 8px;
+    color: #fff;
+    font-size: 6vw;
+    font-weight: 300;
+    text-align: center;
+    text-shadow: 0px 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+#weather ul {
+    margin: 0 2%;
+    padding: 5% 0 0 0;
+    font-size: 1.5vw;
+    font-weight: bolder;
+}
+
+#weather li {
+    color: #fff;
+    padding: 4%;
+    margin: 0 5%;
+    display: inline-block;
+    border-radius: 5px !important;
+}
+
+#weather li.col-xl-6 {
+    background: #fff;
+    background: rgba(255, 255, 255, 0.90);
+    padding: 4%;
+    margin: 0;
+    display: inline-block;
+    border-radius: 5px;
+}
+
+#weather .currently {
+    margin: 3% 20%;
+}

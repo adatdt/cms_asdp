@@ -1,0 +1,96 @@
+    /*
+    Flaticon icon font: Flaticon
+    Creation date: 19/02/2021 07:15
+    */
+
+    @font-face {
+  font-family: "Flaticon";
+  src: url("./Flaticon.eot");
+  src: url("./Flaticon.eot?#iefix") format("embedded-opentype"),
+       url("./Flaticon.woff2") format("woff2"),
+       url("./Flaticon.woff") format("woff"),
+       url("./Flaticon.ttf") format("truetype"),
+       url("./Flaticon.svg#Flaticon") format("svg");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+  @font-face {
+    font-family: "Flaticon";
+    src: url("./Flaticon.svg#Flaticon") format("svg");
+  }
+}
+
+    .fi:before{
+        display: inline-block;
+  font-family: "Flaticon";
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  line-height: 1;
+  text-decoration: inherit;
+  text-rendering: optimizeLegibility;
+  text-transform: none;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  font-smoothing: antialiased;
+    }
+
+    .flaticon-sea-knot:before { content: "\f100"; }
+.flaticon-mop:before { content: "\f101"; }
+.flaticon-ship:before { content: "\f102"; }
+.flaticon-radar:before { content: "\f103"; }
+.flaticon-compass:before { content: "\f104"; }
+.flaticon-yatch:before { content: "\f105"; }
+.flaticon-sailor-hat:before { content: "\f106"; }
+.flaticon-anchor:before { content: "\f107"; }
+.flaticon-lighthouse:before { content: "\f108"; }
+.flaticon-ship-1:before { content: "\f109"; }
+.flaticon-hurricane:before { content: "\f10a"; }
+.flaticon-ship-2:before { content: "\f10b"; }
+.flaticon-steering-wheel:before { content: "\f10c"; }
+.flaticon-contract:before { content: "\f10d"; }
+.flaticon-floating:before { content: "\f10e"; }
+.flaticon-motorboat:before { content: "\f10f"; }
+.flaticon-mooring-bollard:before { content: "\f110"; }
+.flaticon-life-vest:before { content: "\f111"; }
+.flaticon-spyglass:before { content: "\f112"; }
+.flaticon-beacon:before { content: "\f113"; }
+.flaticon-pulley:before { content: "\f114"; }
+.flaticon-toll-road:before { content: "\f115"; }
+.flaticon-parking-barrier:before { content: "\f116"; }
+.flaticon-refresh:before { content: "\f117"; }
+.flaticon-barrier:before { content: "\f118"; }
+.flaticon-barrier-1:before { content: "\f119"; }
+.flaticon-wall-clock:before { content: "\f11a"; }
+.flaticon-timetable:before { content: "\f11b"; }
+    
+    $font-Flaticon-sea-knot: "\f100";
+    $font-Flaticon-mop: "\f101";
+    $font-Flaticon-ship: "\f102";
+    $font-Flaticon-radar: "\f103";
+    $font-Flaticon-compass: "\f104";
+    $font-Flaticon-yatch: "\f105";
+    $font-Flaticon-sailor-hat: "\f106";
+    $font-Flaticon-anchor: "\f107";
+    $font-Flaticon-lighthouse: "\f108";
+    $font-Flaticon-ship-1: "\f109";
+    $font-Flaticon-hurricane: "\f10a";
+    $font-Flaticon-ship-2: "\f10b";
+    $font-Flaticon-steering-wheel: "\f10c";
+    $font-Flaticon-contract: "\f10d";
+    $font-Flaticon-floating: "\f10e";
+    $font-Flaticon-motorboat: "\f10f";
+    $font-Flaticon-mooring-bollard: "\f110";
+    $font-Flaticon-life-vest: "\f111";
+    $font-Flaticon-spyglass: "\f112";
+    $font-Flaticon-beacon: "\f113";
+    $font-Flaticon-pulley: "\f114";
+    $font-Flaticon-toll-road: "\f115";
+    $font-Flaticon-parking-barrier: "\f116";
+    $font-Flaticon-refresh: "\f117";
+    $font-Flaticon-barrier: "\f118";
+    $font-Flaticon-barrier-1: "\f119";
+    $font-Flaticon-wall-clock: "\f11a";
+    $font-Flaticon-timetable: "\f11b";

@@ -1,0 +1,13 @@
+{
+    "name": "arifr/asdp-admin",
+    "authors": [
+        {
+            "name": "Arif Rudianto",
+            "email": "rudianto.arif@nutech-integrasi.com"
+        }
+    ],
+    "require": {
+        "spipu/html2pdf": "^5.2",
+        "limanweb/xlsxwriter": "^0.4.0"
+    }
+}

@@ -1,0 +1,43 @@
+.content > a {
+  color: #ffffff;
+}
+
+.page-header.navbar .page-logo {
+    padding-left: 15px !important;
+}
+
+img.logo-default {
+    width: 162px;
+}
+.page-header.navbar .page-logo .logo-default {
+    margin: 0px !important;
+}
+
+.page-header.navbar {
+    border-bottom: 4px solid #ff9c00 !important;
+    box-shadow: 0 3px 10px rgba(0,0,0,.23), 0 3px 10px rgba(0,0,0,.16) !important;
+}
+
+.page-sidebar .page-sidebar-menu.page-sidebar-menu-light>li.active.open>a:hover, .page-sidebar .page-sidebar-menu.page-sidebar-menu-light>li.active>a:hover, .page-sidebar-closed.page-sidebar-fixed .page-sidebar:hover .page-sidebar-menu.page-sidebar-menu-light>li.active.open>a:hover, .page-sidebar-closed.page-sidebar-fixed .page-sidebar:hover .page-sidebar-menu.page-sidebar-menu-light>li.active>a:hover {
+    border-left: 4px solid #ff9c00 !important;
+}
+
+.page-sidebar .page-sidebar-menu.page-sidebar-menu-light>li.active.open>a, .page-sidebar .page-sidebar-menu.page-sidebar-menu-light>li.active>a, .page-sidebar-closed.page-sidebar-fixed .page-sidebar .page-sidebar-menu.page-sidebar-menu-light>li.active.open>a, .page-sidebar-closed.page-sidebar-fixed .page-sidebar .page-sidebar-menu.page-sidebar-menu-light>li.active>a {
+    border-left: 4px solid #ff9c00 !important;
+}
+
+.page-header.navbar .top-menu .navbar-nav>li.dropdown-user .dropdown-toggle {
+    padding: 13px 6px 13px 8px !important;
+}
+
+.dashboard-stat .details .number {
+    font-size: 26px !important;
+}
+
+.page-header.navbar .top-menu .navbar-nav>li.dropdown-language>.dropdown-toggle>.langname, .page-header.navbar .top-menu .navbar-nav>li.dropdown-user>.dropdown-toggle>.username, .page-header.navbar .top-menu .navbar-nav>li.dropdown-user>.dropdown-toggle>i {
+    color: #fff !important;
+}
+
+.dashboard-stat {
+    box-shadow: 0 3px 10px rgba(0,0,0,.23), 0 3px 10px rgba(0,0,0,.16) !important;
+}

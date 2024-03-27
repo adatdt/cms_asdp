@@ -1,0 +1,117 @@
+<?php 
+if (! defined ( 'BASEPATH' )) exit ( 'No direct script access allowed' );
+
+class MY_Controller extends CI_Controller {
+
+    public function __construct() {
+        parent::__construct();
+        logged_in();
+    }
+
+    public function check_access($slug, $action) {
+        $g_id       = $this->session->userdata('group_id');
+        $access     = array('slug' => $slug,'g_id'=> $g_id, 'action' => $action );
+        $getAccess  = $this->global_model->getAccess($access);
+        if($getAccess==false){
+         redirect('error_401');
+        } 
+    }
+
+    /*
+    Document   : Pelabuhan
+    Created on : 10 juli, 2023
+    Author     : adi
+    Description: Enhancement pasca angleb 2023
+    */
+    protected function get_json_data() {
+    $json = json_decode(file_get_contents("php://input"), true);
+        $post = $this->input->post();
+        if ($json != NULL) {
+        $_POST = $json;
+        return $json;
+        } else if ($post != NULL) {
+        return $post;
+        } else {
+        echo json_encode(array('success' => 'false', 'message' => 'Parameter tidak ditemukan.'));
+        exit();
+        }
+    }
+    protected function validate_param_req($set,$message,$rules, $module, $errors = array()){
+      $this->form_validation->set_rules($set, $message, $rules,$errors);
+      if ($this->form_validation->run() == FALSE) {
+          $response = array(
+            'code'    => 102,
+            'message' => validation_errors(),
+            'data'    => null
+          );
+          $json_request = $this->get_json_data();
+          /* Fungsi Create Log */
+          $created_by   = 'system';
+          $log_url      = site_url() . $module;
+          $log_method   = 'POST';
+          $log_param    = json_encode($json_request);
+          $log_response = json_encode($response);
+
+          $this->log_activitytxt->createLog($created_by, $log_url, $log_method, $log_param, $log_response);
+          echo json_encode($response);
+          exit;
+        }
+    }
+
+    protected function validate_param_datatable($data, $module, $errors = array()){
+        $value = "value";
+        $this->form_validation->set_rules('start', 'start', 'trim|required|numeric');
+        $this->form_validation->set_rules('length', 'length', 'trim|required|numeric');
+        $this->form_validation->set_rules('order[]', 'order', 'trim|required');
+        if ($this->form_validation->run() == FALSE) {
+            echo json_api(102, validation_errors(),[]);
+            exit;
+        }
+
+        $column = "column";
+        $dir = "dir";
+        $this->form_validation->set_rules("order[0][" . $column . "]", 'trim|required|numeric');
+        $this->form_validation->set_rules("order[0][" . $dir . "]", 'dir', 'trim|required|alpha');
+        if ($this->form_validation->run() == FALSE) {
+            echo json_api(102, validation_errors(),[]); 
+            exit;
+        }
+        $this->form_validation->set_rules('search['.$value.']', 'search', 'trim|callback_special_char',array('special_char' => 'search has contain invalid characters'));
+        if ($this->form_validation->run() == FALSE) {
+            echo json_api(102, validation_errors(),[]);
+            exit;
+        }
+        
+        
+        return true;
+    }
+
+     function special_char($str)
+    {   
+        if (preg_match('/[^a-zA-Z0-9\s\-_\.,\?\/@.=+:]/', $str ))
+        {           
+          
+           return FALSE;
+        }
+        return  TRUE;
+    }
+
+    function validate_decode_param($str){
+        if(!$this->enc->decode($str)){
+            return FALSE;
+        }
+        
+        
+        return true;
+    }
+
+    
+    /*
+    Document   : Pelabuhan
+    Created on : 10 juli, 2023
+    Author     : adi
+    Description: end Enhancement pasca angleb 2023
+    */
+    
+
+}

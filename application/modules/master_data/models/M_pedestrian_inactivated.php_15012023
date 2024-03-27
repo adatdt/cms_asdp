@@ -1,0 +1,174 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+class M_pedestrian_inactivated extends MY_Model{
+
+	public function __construct() {
+		parent::__construct();
+        $this->_module = 'master_data/pedestrian_inactivated';
+	}
+
+  public function dataList() {
+		$start          = $this->input->post('start');
+		$length         = $this->input->post('length');
+		$draw           = $this->input->post('draw');
+		$search         = $this->input->post('search');
+		$order          = $this->input->post('order');
+		$order_column   = $order[0]['column'];
+		$order_dir      = strtoupper($order[0]['dir']);
+		$iLike          = trim(strtoupper($this->db->escape_like_str($search['value'])));
+		
+		$port_id           = $this->enc->decode($this->input->post('port_id'));
+		$ship_class_id     = $this->enc->decode($this->input->post('ship_class_id'));
+
+        $field = array(
+			0 =>'id',
+			1 => 'port_id',
+			2 => 'ship_class',
+			3 => 'start_date',
+			4 => 'end_date',
+			5 => 'status',
+		);
+
+		$order_column = $field[$order_column];
+
+		$where = "WHERE (pd.status NOT IN (-5))";
+
+		if (!empty($port_id)) {
+			$where .= " AND (pd.port_id = $port_id)";
+		}
+
+		if (!empty($ship_class_id)) {
+			$where .= " AND (ship_class = $ship_class_id)";
+		}
+
+		if(!empty($search['value'])) {
+			$where .=" AND ( (port.name ilike '%".$iLike."%') OR (ship_class.name ilike '%".$iLike."%') )";
+		}
+
+		$sql = "SELECT
+                    pd.id AS id,
+                    port.name AS port,
+                    ship_class.name AS class,
+                    pd.start_date,
+                    pd.end_date,
+                    pd.pos_motor_bike,
+                    pd.pos_vehicle,
+                    pd.web,
+                    pd.mobile,
+                    pd.b2b,
+                    pd.ifcs,
+                    pd.web_cs,
+                    pd.mpos_vehicle,
+                    pd.mpos_motor_bike,
+                    pd.status
+                FROM app.t_mtr_pedestrian_inactivated pd
+                JOIN app.t_mtr_port port ON pd.port_id = port.id
+                JOIN app.t_mtr_ship_class ship_class ON pd.ship_class = ship_class.id
+				{$where}";
+
+		$query         = $this->db->query($sql);
+		$records_total = $query->num_rows();
+		$sql 		  .= " ORDER BY ".$order_column." {$order_dir}";
+
+		if($length != -1){
+			$sql .= " LIMIT {$length} OFFSET {$start}";
+		}
+
+		$query     = $this->db->query($sql);
+		$rows_data = $query->result();
+
+		$rows 	= array();
+		$i  	= ($start + 1);
+
+		foreach ($rows_data as $row) {
+			$row->number = $i;
+
+			$id_enc=$this->enc->encode($row->id);
+
+			$row->port 			= empty($row->port) ? '-' : $row->port;
+			$row->group 		= empty($row->group) ? '-' : $row->group;
+			$row->class 		= empty($row->class) ? '-' : $row->class;
+			$row->start_date 	= empty($row->start_date) ? '-' : date('d-m-Y H:i:s', strtotime($row->start_date));
+			$row->end_date 		= empty($row->end_date) ? '-' : date('d-m-Y H:i:s', strtotime($row->end_date));
+
+			$row->pos_motor_bike === "t" ? $row->pos_motor_bike = success_label('Aktif') : $row->pos_motor_bike = failed_label('Tidak Aktif');
+			$row->pos_vehicle === "t" ? $row->pos_vehicle = success_label('Aktif') : $row->pos_vehicle = failed_label('Tidak Aktif');
+			$row->web == "t" ? $row->web = success_label('Aktif') : $row->web = failed_label('Tidak Aktif');
+			$row->mobile == "t" ? $row->mobile = success_label('Aktif') : $row->mobile = failed_label('Tidak Aktif');
+			$row->b2b == "t" ? $row->b2b = success_label('Aktif') : $row->b2b = failed_label('Tidak Aktif');
+			$row->ifcs == "t" ? $row->ifcs = success_label('Aktif') : $row->ifcs = failed_label('Tidak Aktif');
+			$row->web_cs == "t" ? $row->web_cs = success_label('Aktif') : $row->web_cs = failed_label('Tidak Aktif');
+			$row->mpos_motor_bike == "t" ? $row->mpos_motor_bike = success_label('Aktif') : $row->mpos_motor_bike = failed_label('Tidak Aktif');
+			$row->mpos_vehicle == "t" ? $row->mpos_vehicle = success_label('Aktif') : $row->mpos_vehicle = failed_label('Tidak Aktif');
+
+			$now 	= strtotime('now');
+			$start 	= strtotime($row->start_date);
+			$end 	= strtotime($row->end_date);
+
+			if($now > $start && $now < $end) {
+				$row->status = success_label('Aktif');
+			}
+			else {
+				$row->status = failed_label('Tidak Aktif');
+			}
+
+			$edit_url 	 	= site_url($this->_module."/edit/{$id_enc}");
+			$delete_url  	= site_url($this->_module."/action_delete/{$id_enc}");
+			$row->actions 	= generate_button_new($this->_module, 'edit', $edit_url);
+			$row->actions 	.= generate_button_new($this->_module, 'delete', $delete_url);
+
+            $rows[] = $row;
+			unset($row->id);
+			$i++;
+		}
+
+		return array(
+			'draw'           => $draw,
+			'recordsTotal'   => $records_total,
+			'recordsFiltered'=> $records_total,
+			'data'           => $rows
+		);
+	}
+
+	public function check_data($port_id, $ship_class_id, $param = "") {
+		if ($param != "") {
+			$sql = $this->db->query("SELECT * FROM app.t_mtr_pedestrian_inactivated WHERE port_id = $port_id AND ship_class = $ship_class_id AND id != $param");
+			if ($sql->num_rows() > 0) {
+				return true;
+			}else{
+				return false;
+			}
+		}
+		else {
+			$sql = $this->db->query("SELECT * FROM app.t_mtr_pedestrian_inactivated WHERE port_id = $port_id AND ship_class = $ship_class_id");
+			if ($sql->num_rows() > 0) {
+				return true;
+			}else{
+				return false;
+			}
+		}
+	}
+
+	public function get_edit($id) {
+		return $this->db->query("SELECT * FROM app.t_mtr_pedestrian_inactivated WHERE id = $id")->row();
+	}
+			
+	public function select_data($table, $where) {
+        return $this->db->query("SELECT * FROM $table $where");
+	}
+
+	public function insert_data($table, $data) {
+		$this->db->insert($table, $data);
+	}
+
+	public function update_data($table, $data, $where) {
+		$this->db->where($where);
+		$this->db->update($table, $data);
+	}
+
+	public function delete_data($table, $data, $where) {
+		$this->db->where($where);
+		$this->db->delete($table, $data);
+	}
+}

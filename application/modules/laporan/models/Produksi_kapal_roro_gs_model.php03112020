@@ -1,0 +1,534 @@
+<?php
+defined('BASEPATH') or exit('No direct script access allowed');
+
+/**
+ * -----------------------
+ * CLASS NAME : Produksi_kapal_roro_gs_model
+ * -----------------------
+ *
+ * @author     Arif Rudianto
+ * @copyright  2019
+ *
+ */
+
+class Produksi_kapal_roro_gs_model extends MY_Model
+{
+
+	public function __construct()
+	{
+		parent::__construct();
+		$this->_module = 'laporan/produksi_kapal_roro_gs';
+	}
+
+	public function dataList()
+	{
+		$start = $this->input->post('start');
+		$length = $this->input->post('length');
+		$draw = $this->input->post('draw');
+		$search = $this->input->post('search');
+		// $dateTo = trim($this->input->post('dateTo'));
+		// $dateFrom = trim($this->input->post('dateFrom'));
+		// $port = $this->enc->decode($this->input->post('port'));
+		// $dock = $this->enc->decode($this->input->post('dock'));
+		$order = $this->input->post('order');
+		$order_column = $order[0]['column'];
+		$order_dir = strtoupper($order[0]['dir']);
+		$iLike        = trim(strtoupper($this->dbView->escape_like_str($search['value'])));
+
+
+		$field = array(
+			1 => 'ship',
+			2 => 'company',
+			3 => 'ship_grt',
+			4 => 'docking_date',
+			5 => 'open_boarding_date',
+			6 => 'duration',
+			7 => 'dermaga',
+			8 => 'call',
+			9 => 'dewasa',
+			10 => 'anak',
+			11 => 'totalP',
+			12 => 'gol1',
+			13 => 'gol2',
+			14 => 'gol3',
+			15 => 'gol4A',
+			16 => 'gol4B',
+			17 => 'gol5A',
+			18 => 'gol5B',
+			19 => 'gol6A',
+			20 => 'gol6B',
+			21 => 'gol7',
+			22 => 'gol8',
+			23 => 'gol9',
+			24 => 'totalK',
+		);
+
+		$order_column = $field[$order_column];
+		$where = " where SH.status != -5";
+
+		// if ((!empty($dateFrom) and empty($dateTo))||(empty($dateFrom) and !empty($dateTo))){
+		// 	$where .=" and shift_date ='$dateFrom' or shift_date ='$dateTo'";
+		// }
+
+		// if(!empty($dateFrom) and !empty($dateTo)){
+		// 	$where .=" and shift_date between '$dateFrom' and  '$dateTo'";
+		// }
+
+		// if(!empty($port)){
+		// 	$where .=" and (ttob.port_id=".$port.")";
+		// }
+
+		// if (!empty($search['value'])){
+		// 	$where .=" and (tmsh.name ilike '%".$iLike."%' or tmp.name ilike '%".$iLike."%' or tmd.name ilike '%".$iLike."%')";	
+		// }
+
+		$sql = "SELECT SH.schedule_code, S.name as ship, SC.name as company, ship_grt, docking_date, open_boarding_date, (open_boarding_date - docking_date) as duration, D.name as dermaga, SH.call
+						-- (SELECT count(BP.id)
+						-- FROM app.t_trx_booking_passanger BP
+						-- JOIN app.t_trx_boarding_passanger BRP ON BP.ticket_number = BRP.ticket_number
+						-- JOIN app.t_trx_open_boarding OB ON OB.boarding_code = BRP.boarding_code
+						-- WHERE BP.service_id = 2 AND BP.passanger_type_id = 1 AND OB.schedule_code = SH.schedule_code) AS dewasa,
+						-- (SELECT count(BP.id)
+						-- FROM app.t_trx_booking_passanger BP
+						-- JOIN app.t_trx_boarding_passanger BRP ON BP.ticket_number = BRP.ticket_number
+						-- JOIN app.t_trx_open_boarding OB ON OB.boarding_code = BRP.boarding_code
+						-- WHERE BP.service_id = 2 AND BP.passanger_type_id = 2 AND OB.schedule_code = SH.schedule_code) AS anak,
+						-- (SELECT count(BP.id)
+						-- FROM app.t_trx_booking_passanger BP
+						-- JOIN app.t_trx_boarding_passanger BRP ON BP.ticket_number = BRP.ticket_number
+						-- JOIN app.t_trx_open_boarding OB ON OB.boarding_code = BRP.boarding_code
+						-- WHERE BP.service_id = 2 AND OB.schedule_code = SH.schedule_code) AS penumpang
+				FROM app.t_trx_schedule SH
+				JOIN app.t_mtr_dock D on D.id = SH.dock_id
+				JOIN app.t_mtr_ship S on S.id = SH.ship_id
+				JOIN app.t_mtr_ship_company SC ON SC.id = S.ship_company_id
+				{$where}
+				";
+
+		$query          = $this->dbView->query($sql);
+		$records_total  = $query->num_rows();
+
+		$sql .= " order by " . $order_column . " {$order_dir}";
+
+		if ($length != -1) {
+			$sql .= " limit {$length} offset {$start}";
+		}
+
+		$query     = $this->dbView->query($sql);
+		$rows_data = $query->result();
+
+		$rows 	= array();
+		$i  	= ($start + 1);
+
+		foreach ($rows_data as $row) {
+			$row->number = $i;
+
+			//pejalan kaki
+			$sql2 = "select
+					passanger_type.name as passanger_type_name,
+					trx_passenger.passanger_type_id as passanger_id,
+					coalesce(trip_fee, 0) as trip_fee,
+					coalesce(adm_fee, 0) as adm_fee,
+					coalesce(ticket_count, 0) as ticket_count,
+					coalesce(total_amount, 0) as total_amount
+				from
+					app.t_mtr_passanger_type passanger_type
+					left join (
+						select
+						ttbp.passanger_type_id,
+						count (distinct ttbp.id) as ticket_count,
+						ttbp.trip_fee,
+						sum(ttbp.adm_fee) as adm_fee,
+						count (distinct ttbp.id) * ttbp.trip_fee as total_amount
+						from
+						app.t_trx_booking ttb
+						join app.t_trx_booking_passanger ttbp on ttbp.booking_code = ttb.booking_code and ttbp.status = 5
+						and ttb.service_id = 1
+						join app.t_trx_boarding_passanger ttop on ttop.ticket_number = ttbp.ticket_number
+						join app.t_trx_open_boarding ttob on ttob.boarding_code = ttop.boarding_code
+						and ttob.status = 0
+						where
+						ttob.schedule_code = '{$row->schedule_code}'
+						group by
+						ttbp.passanger_type_id,
+						ttbp.trip_fee,
+						ttbp.adm_fee
+					) trx_passenger on passanger_type.id = trx_passenger.passanger_type_id where passanger_type.id in (1, 2)";
+
+			$result = $this->dbView->query($sql2);
+			$penumpangs = $result->result();
+			$row->dewasa = $row->anak = 0;
+			foreach ($penumpangs as $penumpang) {
+				if ($penumpang->passanger_id == 1) {
+					$row->dewasa += $penumpang->ticket_count;
+					// $amountD = $penumpang->ticket_amount;
+				} else if ($penumpang->passanger_id == 2) {
+					$row->anak += $penumpang->ticket_count;
+					// $amountA = $penumpang->ticket_amount;
+				}
+			}
+			$row->totalP = $row->dewasa + $row->anak;
+
+			//kendaraan
+			$sql3 = "select
+					vehicle_type.name as vehicle_type_name,
+					trx_vehicle.vehicle_class_id as vehicle_id,
+					coalesce(trip_fee, 0) as trip_fee,
+					coalesce(adm_fee, 0) as adm_fee,
+					coalesce(ticket_count, 0) as ticket_count,
+					coalesce(total_amount, 0) as total_amount
+				from
+					app.t_mtr_vehicle_class vehicle_type
+					left join (
+						select
+						ttbv.vehicle_class_id,
+						count (distinct ttbv.id) as ticket_count,
+						ttbv.trip_fee,
+						sum(ttbv.adm_fee) as adm_fee,
+						count (distinct ttbv.id) * ttbv.trip_fee as total_amount
+						from
+						app.t_trx_booking ttb
+						join app.t_trx_booking_vehicle ttbv on ttbv.booking_code = ttb.booking_code and ttbv.status = 5
+						and ttb.service_id = 2
+						join app.t_trx_boarding_vehicle ttop on ttop.ticket_number = ttbv.ticket_number
+						join app.t_trx_open_boarding ttob on ttob.boarding_code = ttop.boarding_code
+						and ttob.status = 0
+						where
+						ttob.schedule_code = '{$row->schedule_code}'
+						group by
+						ttbv.vehicle_class_id,
+						ttbv.trip_fee,
+						ttbv.adm_fee
+					) trx_vehicle on vehicle_type.id = trx_vehicle.vehicle_class_id where vehicle_type.status = 1 order by vehicle_type.id asc";
+
+			$result = $this->dbView->query($sql3);
+			$kendaraans = $result->result();
+			$row->gol1 = $row->gol2 = $row->gol3 = $row->gol4A = $row->gol4B = $row->gol5A = $row->gol5B = $row->gol6A = $row->gol6B = $row->gol7 = $row->gol8 = $row->gol9 = 0;
+			foreach ($kendaraans as $kendaraan) {
+				switch ($kendaraan->vehicle_id) {
+					case 4:
+						$row->gol1 += $kendaraan->ticket_count;
+						break;
+					case 7:
+						$row->gol2 += $kendaraan->ticket_count;
+						break;
+					case 8:
+						$row->gol3 += $kendaraan->ticket_count;
+						break;
+					case 9:
+						$row->gol4A += $kendaraan->ticket_count;
+						break;
+					case 10:
+						$row->gol4B += $kendaraan->ticket_count;
+						break;
+					case 11:
+						$row->gol5A += $kendaraan->ticket_count;
+						break;
+					case 12:
+						$row->gol5B += $kendaraan->ticket_count;
+						break;
+					case 13:
+						$row->gol6A += $kendaraan->ticket_count;
+						break;
+					case 14:
+						$row->gol6B += $kendaraan->ticket_count;
+						break;
+					case 15:
+						$row->gol7 += $kendaraan->ticket_count;
+						break;
+					case 16:
+						$row->gol8 += $kendaraan->ticket_count;
+						break;
+					case 17:
+						$row->gol9 += $kendaraan->ticket_count;
+						break;
+					default:
+						break;
+				}
+			}
+			$row->totalK = $row->gol1 + $row->gol2 + $row->gol3 + $row->gol4A + $row->gol4B + $row->gol5A + $row->gol5B + $row->gol6A + $row->gol6B + $row->gol7 + $row->gol8 + $row->gol9;
+
+			$code 			= $this->enc->encode($row->schedule_code);
+			$detail_url 	= site_url($this->_module . "/detail?id={$code}");
+			$pdf_url 		= site_url($this->_module . "/download_pdf?id={$code}");
+			$excel_url 		= site_url($this->_module . "/download_excel?id={$code}");
+
+			$row->actions 	= "";
+			$row->actions 	.= generate_button_new($this->_module, 'detail', $detail_url);
+			$row->actions 	.= generate_button_new($this->_module, 'download_pdf', $pdf_url);
+			$row->actions 	.= generate_button_new($this->_module, 'download_excel', $excel_url);
+			$row->docking_date = date('d-m-Y H:i:s', strtotime($row->docking_date));
+			$row->open_boarding_date = date('d-m-Y H:i:s', strtotime($row->open_boarding_date));
+			$row->no = $i;
+
+			$rows[] = $row;
+			unset($row->id);
+
+			$i++;
+		}
+
+		return array(
+			'draw'           => $draw,
+			'recordsTotal'   => $records_total,
+			'recordsFiltered' => $records_total,
+			'data'           => $rows
+		);
+	}
+
+	public function dock_fare($where = "")
+	{
+
+		return $this->dbView->query("select (schedule.call * schedule.ship_grt * schedule.dock_fare) as dock_service
+			from app.t_trx_schedule schedule
+			{$where}");
+	}
+
+	public function get_kepil()
+	{
+		$sql = $this->dbView->query("SELECT param_value FROM app.t_mtr_custom_param WHERE param_name = 'jasa_kepil'")->row();
+		return $sql->param_value;
+	}
+
+	public function adm_fee($where = "")
+	{
+
+		return $this->dbView->query("select param_value from app.t_mtr_custom_param
+			{$where}");
+	}
+
+	public function select_data($table, $where = "")
+	{
+		return $this->dbView->query("select * from $table $where");
+	}
+
+	public function get_shift_time($shift_id, $port_id)
+	{
+		if ($shift_id != "" && $port_id != "") {
+			$sql = $this->dbView->query("SELECT shift_login,shift_logout FROM app.t_mtr_shift_time WHERE shift_id = $shift_id AND port_id = $port_id");
+
+			if ($sql->num_rows() > 0) {
+				return $sql->row();
+			} else {
+				return false;
+			}
+		} else {
+			return false;
+		}
+	}
+
+	public function get_regu($shift_id, $port_id)
+	{
+		if ($shift_id != "") {
+			$session_shift_class = $this->session->userdata('ship_class_id');
+			if ($session_shift_class != "") {
+				$wsc = " AND OB.ship_class = $session_shift_class";
+			} else {
+				$wsc = "";
+			}
+			$sql = $this->dbView->query("SELECT DISTINCT team_name
+								FROM app.t_trx_open_boarding OB
+								JOIN app.t_trx_assignment_regu AR ON AR.shift_id = OB.shift_id
+								JOIN core.t_mtr_team T ON T.team_code = AR.team_code
+								WHERE OB.shift_id = $shift_id AND T.port_id = $port_id {$wsc}
+								ORDER BY team_name ASC");
+			if ($sql->num_rows() > 0) {
+				return $sql->result();
+			} else {
+				return false;
+			}
+		} else {
+			return false;
+		}
+	}
+
+	public function get_all_data($datefrom, $dateto, $port, $shift)
+	{
+		$where_port = "";
+		$where_port_sub = "";
+		$where_ship_class = "";
+		$where_shift = "";
+		$where_shift_sub = "";
+
+		if ($port != "") {
+			$where_port = " AND SH.port_id = $port";
+		}
+
+		if ($shift != "") {
+			$where_shift = " AND OB.shift_id = $shift";
+		}
+		$session_shift_class = $this->session->userdata('ship_class_id');
+		if ($session_shift_class != "") {
+			$where_ship_class = " AND OB.ship_class = $session_shift_class";
+			$wsc = " AND ttob.ship_class = $session_shift_class";
+		} else {
+			$wsc = "";
+		}
+
+		$sql = "SELECT SH.schedule_code, S.name as ship, SC.name as company, ship_grt, docking_date, sail_date, (sail_date - docking_date) as duration, D.name as dermaga, SH.call
+				FROM app.t_trx_schedule SH
+				JOIN app.t_trx_open_boarding OB on OB.schedule_code = SH.schedule_code
+				JOIN app.t_mtr_dock D on D.id = SH.dock_id
+				JOIN app.t_mtr_ship S on S.id = SH.ship_id
+				JOIN app.t_mtr_ship_company SC ON SC.id = S.ship_company_id
+				WHERE OB.status = 0
+				AND OB.shift_date BETWEEN '$datefrom' AND '$dateto'
+				$where_port
+				$where_shift
+				$where_ship_class
+				ORDER BY sail_date ASC
+				";
+
+		$query     = $this->dbView->query($sql);
+		$rows_data = $query->result();
+
+		$rows 	= array();
+		$i  	= ($start + 1);
+
+		foreach ($rows_data as $row) {
+			$row->number = $i;
+			$row->dewasa = $row->anak = $row->amount = 0;
+			$row->gol1 = $row->gol2 = $row->gol3 = $row->gol4A = $row->gol4B = $row->gol5A = $row->gol5B = $row->gol6A = $row->gol6B = $row->gol7 = $row->gol8 = $row->gol9 = 0;
+
+			//pejalan kaki
+			$sql2 = "select
+					passanger_type.name as passanger_type_name,
+					trx_passenger.passanger_type_id as passanger_id,
+					coalesce(trip_fee, 0) as trip_fee,
+					coalesce(adm_fee, 0) as adm_fee,
+					coalesce(ticket_count, 0) as ticket_count,
+					coalesce(total_amount, 0) as total_amount
+				from
+					app.t_mtr_passanger_type passanger_type
+					left join (
+						select
+						ttbp.passanger_type_id,
+						count (distinct ttbp.id) as ticket_count,
+						ttbp.trip_fee,
+						sum(ttbp.adm_fee) as adm_fee,
+						count (distinct ttbp.id) * ttbp.trip_fee as total_amount
+						from
+						app.t_trx_booking ttb
+						join app.t_trx_booking_passanger ttbp on ttbp.booking_code = ttb.booking_code and ttbp.status = 5
+						and ttb.service_id = 1
+						join app.t_trx_boarding_passanger ttop on ttop.ticket_number = ttbp.ticket_number
+						join app.t_trx_open_boarding ttob on ttob.boarding_code = ttop.boarding_code
+						and ttob.status = 0
+						where
+						ttob.schedule_code = '{$row->schedule_code}'
+						{$wsc}
+						group by
+						ttbp.passanger_type_id,
+						ttbp.trip_fee,
+						ttbp.adm_fee
+					) trx_passenger on passanger_type.id = trx_passenger.passanger_type_id where passanger_type.id in (1, 2)";
+
+			$result = $this->dbView->query($sql2);
+			$penumpangs = $result->result();
+			foreach ($penumpangs as $penumpang) {
+				$row->amount += $penumpang->total_amount;
+				if ($penumpang->passanger_id == 1) {
+					$row->dewasa += $penumpang->ticket_count;
+				} else if ($penumpang->passanger_id == 2) {
+					$row->anak += $penumpang->ticket_count;
+				}
+			}
+			$row->totalP = $row->dewasa + $row->anak;
+
+			//kendaraan
+			$sql3 = "select
+					vehicle_type.name as vehicle_type_name,
+					trx_vehicle.vehicle_class_id as vehicle_id,
+					coalesce(trip_fee, 0) as trip_fee,
+					coalesce(adm_fee, 0) as adm_fee,
+					coalesce(ticket_count, 0) as ticket_count,
+					coalesce(total_amount, 0) as total_amount
+				from
+					app.t_mtr_vehicle_class vehicle_type
+					left join (
+						select
+						ttbv.vehicle_class_id,
+						count (distinct ttbv.id) as ticket_count,
+						ttbv.trip_fee,
+						sum(ttbv.adm_fee) as adm_fee,
+						count (distinct ttbv.id) * ttbv.trip_fee as total_amount
+						from
+						app.t_trx_booking ttb
+						join app.t_trx_booking_vehicle ttbv on ttbv.booking_code = ttb.booking_code and ttbv.status = 5
+						and ttb.service_id = 2
+						join app.t_trx_boarding_vehicle ttop on ttop.ticket_number = ttbv.ticket_number
+						join app.t_trx_open_boarding ttob on ttob.boarding_code = ttop.boarding_code
+						and ttob.status = 0
+						where
+						ttob.schedule_code = '{$row->schedule_code}'
+						{$wsc}
+						group by
+						ttbv.vehicle_class_id,
+						ttbv.trip_fee,
+						ttbv.adm_fee
+					) trx_vehicle on vehicle_type.id = trx_vehicle.vehicle_class_id where vehicle_type.status = 1 order by vehicle_type.id asc";
+
+			$result = $this->dbView->query($sql3);
+			$kendaraans = $result->result();
+			foreach ($kendaraans as $kendaraan) {
+				$row->amount += $kendaraan->total_amount;
+				switch ($kendaraan->vehicle_id) {
+					case 4:
+						$row->gol1 += $kendaraan->ticket_count;
+						break;
+					case 7:
+						$row->gol2 += $kendaraan->ticket_count;
+						break;
+					case 8:
+						$row->gol3 += $kendaraan->ticket_count;
+						break;
+					case 9:
+						$row->gol4A += $kendaraan->ticket_count;
+						break;
+					case 10:
+						$row->gol4B += $kendaraan->ticket_count;
+						break;
+					case 11:
+						$row->gol5A += $kendaraan->ticket_count;
+						break;
+					case 12:
+						$row->gol5B += $kendaraan->ticket_count;
+						break;
+					case 13:
+						$row->gol6A += $kendaraan->ticket_count;
+						break;
+					case 14:
+						$row->gol6B += $kendaraan->ticket_count;
+						break;
+					case 15:
+						$row->gol7 += $kendaraan->ticket_count;
+						break;
+					case 16:
+						$row->gol8 += $kendaraan->ticket_count;
+						break;
+					case 17:
+						$row->gol9 += $kendaraan->ticket_count;
+						break;
+					default:
+						break;
+				}
+			}
+			$row->totalK = $row->gol1 + $row->gol2 + $row->gol3 + $row->gol4A + $row->gol4B + $row->gol5A + $row->gol5B + $row->gol6A + $row->gol6B + $row->gol7 + $row->gol8 + $row->gol9;
+
+			$temp_dock = $row->docking_date;
+			$temp_sail = $row->sail_date;
+			$row->docking_date = date('Y-m-d', strtotime($temp_dock));
+			$row->docking_time = date('H:i:s', strtotime($temp_dock));
+			$row->sail_date = date('Y-m-d', strtotime($temp_sail));
+			$row->sail_time = date('H:i:s', strtotime($temp_sail));
+			$row->dermaga = substr($row->dermaga, 8);
+			// $row->amount = idr_currency($row->amount);
+			$row->no = $i;
+
+			$rows[] = $row;
+			unset($row->id);
+
+			$i++;
+		}
+		return $rows;
+	}
+}

@@ -1,0 +1,173 @@
+{"data":[
+    {
+        "kapal": "RO-RO",
+        "kelas": "Binis I Dewasa",
+        "no_seri_awal": "21305-51311",
+        "lembar_awal": "General",
+        "no_seri_jual": "21305-51312",
+        "lembar_jual": "General",
+        "tarif": "General",
+        "jumlah": "General",
+        "no_seri_akhir": "21305-51312",
+        "lembar_akhir": "General"
+    },
+    {
+        "kapal": "RO-RO",
+        "kelas": "Binis I Dewasa",
+        "no_seri_awal": "21305-51312",
+        "lembar_awal": "General",
+        "no_seri_jual": "21305-51313",
+        "lembar_jual": "General",
+        "tarif": "General",
+        "jumlah": "General",
+        "no_seri_akhir": "21305-51313",
+        "lembar_akhir": "General"
+    },
+    {
+        "kapal": "RO-RO",
+        "kelas": "Binis II Dewasa",
+        "no_seri_awal": "21305-51313",
+        "lembar_awal": "General",
+        "no_seri_jual": "21305-51314",
+        "lembar_jual": "General",
+        "tarif": "General",
+        "jumlah": "General",
+        "no_seri_akhir": "21305-51314",
+        "lembar_akhir": "General"
+    },
+    {
+        "kapal": "RO-RO",
+        "kelas": "Ekonomi Dewasa",
+        "no_seri_awal": "21305-51314",
+        "lembar_awal": "General",
+        "no_seri_jual": "21305-51315",
+        "lembar_jual": "General",
+        "tarif": "General",
+        "jumlah": "General",
+        "no_seri_akhir": "21305-51315",
+        "lembar_akhir": "General"
+    },
+    {
+        "kapal": "RO-RO",
+        "kelas": "Eksekutif Anak",
+        "no_seri_awal": "21305-51315",
+        "lembar_awal": "General",
+        "no_seri_jual": "21305-51316",
+        "lembar_jual": "General",
+        "tarif": "General",
+        "jumlah": "General",
+        "no_seri_akhir": "21305-51316",
+        "lembar_akhir": "General"
+    },
+    {
+        "kapal": "NUSA JAYA",
+        "kelas": "Ekonomi Dewasa",
+        "no_seri_awal": "21305-51316",
+        "lembar_awal": "General",
+        "no_seri_jual": "21305-51317",
+        "lembar_jual": "General",
+        "tarif": "General",
+        "jumlah": "General",
+        "no_seri_akhir": "21305-51317",
+        "lembar_akhir": "General"
+    },
+    {
+        "kapal": "NUSA JAYA",
+        "kelas": "Ekonomi Dewasa",
+        "no_seri_awal": "21305-51317",
+        "lembar_awal": "General",
+        "no_seri_jual": "21305-51318",
+        "lembar_jual": "General",
+        "tarif": "General",
+        "jumlah": "General",
+        "no_seri_akhir": "21305-51318",
+        "lembar_akhir": "General"
+    },
+    {
+        "kapal": "NUSA JAYA",
+        "kelas": "Ekonomi Dewasa",
+        "no_seri_awal": "21305-51318",
+        "lembar_awal": "General",
+        "no_seri_jual": "21305-51319",
+        "lembar_jual": "General",
+        "tarif": "General",
+        "jumlah": "General",
+        "no_seri_akhir": "21305-51319",
+        "lembar_akhir": "General"
+    },
+    {
+        "kapal": "NUSA JAYA",
+        "kelas": "Eksekutif Dewasa",
+        "no_seri_awal": "21305-51319",
+        "lembar_awal": "General",
+        "no_seri_jual": "21305-51320",
+        "lembar_jual": "General",
+        "tarif": "General",
+        "jumlah": "General",
+        "no_seri_akhir": "21305-51320",
+        "lembar_akhir": "General"
+    },
+    {
+        "kapal": "NUSA JAYA",
+        "kelas": "Binis I Dewasa",
+        "no_seri_awal": "21305-51320",
+        "lembar_awal": "General",
+        "no_seri_jual": "21305-51321",
+        "lembar_jual": "General",
+        "tarif": "General",
+        "jumlah": "General",
+        "no_seri_akhir": "21305-51321",
+        "lembar_akhir": "General"
+    },
+    {
+        "kapal": "NUSA JAYA",
+        "kelas": "Binis I Dewasa",
+        "no_seri_awal": "21305-51321",
+        "lembar_awal": "General",
+        "no_seri_jual": "21305-51322",
+        "lembar_jual": "General",
+        "tarif": "General",
+        "jumlah": "General",
+        "no_seri_akhir": "21305-51322",
+        "lembar_akhir": "General"
+    },
+    {
+        "kapal": "PANORAMA NUSANTARA",
+        "kelas": "Binis I Dewasa",
+        "no_seri_awal": "21305-51322",
+        "lembar_awal": "General",
+        "no_seri_jual": "21305-51323",
+        "lembar_jual": "General",
+        "tarif": "General",
+        "jumlah": "General",
+        "no_seri_akhir": "21305-51323",
+        "lembar_akhir": "General"
+    },
+    {
+        "kapal": "PANORAMA NUSANTARA",
+        "kelas": "Binis II Dewasa",
+        "no_seri_awal": "21305-51323",
+        "lembar_awal": "General",
+        "no_seri_jual": "21305-51324",
+        "lembar_jual": "General",
+        "tarif": "General",
+        "jumlah": "General",
+        "no_seri_akhir": "21305-51324",
+        "lembar_akhir": "General"
+    },
+    {
+        "kapal": "PANORAMA NUSANTARA",
+        "kelas": "Ekonomi Dewasa",
+        "no_seri_awal": "21305-51324",
+        "lembar_awal": "General",
+        "no_seri_jual": "21305-51325",
+        "lembar_jual": "General",
+        "tarif": "General",
+        "jumlah": "General",
+        "no_seri_akhir": "21305-51325",
+        "lembar_akhir": "General"
+    },
+    {
+        "kapal": ""
+    }
+]}

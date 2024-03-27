@@ -1,0 +1,229 @@
+<?php
+error_reporting(0);
+class Pindah_kapal_v2 extends MY_Controller
+{
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->load->model('pindah_kapal_model_v2', 'model_pindah');
+        $this->load->model('global_model');
+        $this->_module   = 'laporan/pindah_kapal_v2';
+        $this->load->library('Html2pdf');
+
+        $this->dbView = $this->load->database("dbView", TRUE);
+        $this->dbAction = $this->load->database("dbAction", TRUE);        
+    }
+
+    public function index()
+    {
+        checkUrlAccess(uri_string(), 'view');
+        if ($this->input->is_ajax_request()) {
+            $rows = $this->model_pindah->dataList();
+            echo json_encode($rows);
+            exit;
+        }
+
+        $ship = $this->global_model->select_data("app.t_mtr_ship", "where status in (1) order by name asc")->result();
+        $group_id = $this->session->userdata('group_id');
+
+        if ($group_id == 11) {
+            $ship = $this->model_pindah->get_kapal_company($this->session->userdata('id'));
+        }
+
+        $data = array(
+            'home'          => 'Beranda',
+            'url_home'      => site_url('home'),
+            'title'         => 'Laporan Pindah Kapal V2',
+            'content'       => 'pindah_kapal_v2/index',
+            'port'          => $this->global_model->select_data("app.t_mtr_port", "where status in (1) order by name asc")->result(),
+            'ship'          => $ship,
+            'download_pdf'  => checkBtnAccess($this->_module, 'download_pdf'),
+            'download_excel' => checkBtnAccess($this->_module, 'download_excel'),
+        );
+
+        $this->load->view('default', $data);
+    }
+
+    public function detail($switch_ship_code)
+    {
+        validate_ajax();
+        $this->global_model->checkAccessMenuAction($this->_module, 'detail');
+
+        $switch_ship_code  = $this->enc->decode($switch_ship_code);
+
+        $data['home']               = 'Home';
+        $data['url_home']           = site_url('home');
+        $data['title']              = 'LAPORAN PINDAH KAPAL';
+        $lintasan                   = $this->model_pindah->get_lintasan($switch_ship_code);
+        $detail_trip                = $this->model_pindah->detail_trip($switch_ship_code);
+        $data['lintasan']           = $lintasan->port_origin . " - " . $lintasan->port_destination;
+        $data['detail_trip']        = $detail_trip;
+        $data['detail_passenger']   = $this->model_pindah->list_detail_passanger($switch_ship_code);
+        $data['detail_vehicle']     = $this->model_pindah->list_detail_vehicle($switch_ship_code);
+
+        $this->load->view($this->_module . '/detail_modal', $data);
+    }
+
+    function download_pdf($switch_ship_code)
+    {
+        $switch_ship_code  = $this->enc->decode($switch_ship_code);
+
+        $data['title']              = 'LAPORAN PINDAH KAPAL';
+        $lintasan                   = $this->model_pindah->get_lintasan($switch_ship_code);
+        $detail_trip                = $this->model_pindah->detail_trip($switch_ship_code);
+        $data['lintasan']           = $lintasan->port_origin . " - " . $lintasan->port_destination;
+        $data['detail_trip']        = $detail_trip;
+        $data['detail_passenger']   = $this->model_pindah->list_detail_passanger($switch_ship_code);
+        $data['detail_vehicle']     = $this->model_pindah->list_detail_vehicle($switch_ship_code);
+        $this->load->view($this->_module . '/pdf', $data);
+    }
+
+    function download_excel($switch_ship_code)
+    {
+        $switch_ship_code  = $this->enc->decode($switch_ship_code);
+        $excel_name = "pindah_kapal_v2";
+
+        $lintasan = $this->model_pindah->get_lintasan($switch_ship_code);
+        $lintasanku = "";
+        if ($lintasan) {
+            $lintasanku = $lintasan->port_origin . " - " . $lintasan->port_destination;
+        }
+        $detail_trip = $this->model_pindah->detail_trip($switch_ship_code);
+        $detail_passenger = $this->model_pindah->list_detail_passanger($switch_ship_code);
+        $detail_vehicle = $this->model_pindah->list_detail_vehicle($switch_ship_code);
+
+        $this->load->library('XLSExcel');
+        $writer = new XLSXWriter();
+        $filename = strtoupper("pindah_kapal_" . $detail_trip->ship_name . "_" . $detail_trip->shift_date . ".xlsx");
+
+        $writer->setTitle($excel_name);
+        $writer->setSubject($excel_name);
+        $writer->setAuthor($excel_name);
+        $writer->setCompany('ASDP Indonesia Ferry');
+        $writer->setDescription($filename);
+        $writer->setTempDir(sys_get_temp_dir());
+
+        $sheet1 = $filename;
+
+        $styles1 = array(
+            'font' => 'Arial',
+            'font-size' => 10,
+            'font-style' => 'bold',
+            'halign' => 'center',
+            'valign' => 'center',
+            'border' => 'left,right,top,bottom',
+            'border-style' => 'thin',
+        );
+
+        $styles2 = array(
+            'font' => 'Arial',
+            'font-size' => 10,
+            'valign' => 'center',
+            'border' => 'left,right,top,bottom',
+            'border-style' => 'thin',
+        );
+
+        $style_header = array(
+            'font' => 'Arial',
+            'font-size' => 11,
+            'font-style' => 'bold',
+            'valign' => 'center',
+            'border' => 'left,right,top,bottom',
+            'border-style' => 'thin',
+        );
+
+        $style_sub = array(
+            'font' => 'Arial',
+            'font-size' => 10,
+            'font-style' => 'bold',
+            'halign' => 'right',
+            'valign' => 'right',
+            'border' => 'left,right,top,bottom',
+            'border-style' => 'thin',
+        );
+
+        $header = array("string", "string", "string", "string", "string");
+
+        $judul_penumpang = array(
+            "NO.",
+            "JENIS TIKET",
+            "TARIF",
+            "PRODUKSI",
+            "PENDAPATAN",
+        );
+
+        $produksi_penumpang = 0;
+        $pendapatan_penumpang = 0;
+
+        foreach ($detail_passenger as $key => $value) {
+            $produksi_penumpang += $value->produksi;
+            $pendapatan_penumpang += $value->pendapatan;
+
+            $dpis[] = array(
+                $key + 1,
+                $value->golongan,
+                $value->harga,
+                $value->produksi,
+                $value->pendapatan,
+            );
+        }
+
+        $produksi_kendaraan = 0;
+        $pendapatan_kendaraan = 0;
+
+        foreach ($detail_vehicle as $key => $value) {
+            $produksi_kendaraan += $value->produksi;
+            $pendapatan_kendaraan += $value->pendapatan;
+
+            $dvis[] = array(
+                $key + 1,
+                $value->golongan,
+                $value->harga,
+                $value->produksi,
+                $value->pendapatan,
+            );
+        }
+
+        $writer->writeSheetRow($sheet1, array("LAPORAN PINDAH KAPAL"), $style_header);
+        $writer->writeSheetRow($sheet1, array(""));
+
+        $writer->writeSheetRow($sheet1, array("NAMA KAPAL", strtoupper($detail_trip->ship_name), "", "LINTASAN", $lintasanku));
+        $writer->writeSheetRow($sheet1, array("CABANG", $detail_trip->port_name, "", "DERMAGA", $detail_trip->dock_name));
+        $writer->writeSheetRow($sheet1, array("PELABUHAN", $detail_trip->port_name, "", "TANGGAL", date("d M Y", strtotime($detail_trip->shift_date))));
+        $writer->writeSheetRow($sheet1, array(""));
+
+        $writer->writeSheetRow($sheet1, array("1. PENUMPANG"));
+        $writer->writeSheetRow($sheet1, $judul_penumpang, $styles1);
+
+        if ($detail_passenger) {
+            foreach ($dpis as $row) {
+                $writer->writeSheetRow($sheet1, $row, $styles2);
+            }
+        }
+
+        $writer->writeSheetRow($sheet1, array("Sub Total", "", "", $produksi_penumpang, $pendapatan_penumpang), $style_sub);
+        $writer->writeSheetRow($sheet1, array(""));
+
+        $writer->writeSheetRow($sheet1, array("2. KENDARAAN"));
+
+        if ($detail_vehicle) {
+            foreach ($dvis as $row) {
+                $writer->writeSheetRow($sheet1, $row, $styles2);
+            }
+        }
+
+        $writer->writeSheetRow($sheet1, array("Sub Total", "", "", $produksi_kendaraan, $pendapatan_kendaraan), $style_sub);
+
+        $writer->writeSheetRow($sheet1, array("TOTAL JUMLAH (Penumpang + Kendaraan)", "", "", $produksi_penumpang + $produksi_kendaraan, $pendapatan_penumpang + $pendapatan_kendaraan), $style_sub);
+
+        $writer->writeSheetRow($sheet1, array(""));
+
+        $writer->markMergedCell($sheet1, $start_row = 0, $start_col = 0, $end_row = 0, $end_col = 4);
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+        $writer->writeToStdOut();
+    }
+}

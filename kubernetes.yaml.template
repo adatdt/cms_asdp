@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: PROJECT_NAME-deployment
+  namespace: development
+  labels:
+    app: PROJECT_NAME
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: PROJECT_NAME
+  template:
+    metadata:
+      labels:
+        app: PROJECT_NAME
+    spec:
+      containers:
+      - name: PROJECT_NAME
+        image: 192.168.62.220:5000/PROJECT_NAME:VERSION
+        ports:
+        - containerPort: CONTAINER_PORT
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: PROJECT_NAME-lb
+  namespace: development
+spec:
+  type: LoadBalancer
+  ports:
+    - port: SERVICE_PORT
+      protocol: TCP
+      targetPort: TARGET_PORT
+  selector:
+    app: PROJECT_NAME	

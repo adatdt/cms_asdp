@@ -1,0 +1,515 @@
+<?php
+defined ( 'BASEPATH' ) or exit ( 'No direct script access allowed' );
+/**
+ * --------------------------
+ * CLASS NAME : Vehicle_class
+ * --------------------------
+ *
+ * @author     Robai <robai.rastim@gmail.com>
+ * @copyright  2018
+ *
+ */
+
+class Vehicle_class extends MY_Controller{
+
+	public function __construct(){
+		parent::__construct();
+
+        logged_in();
+        $this->load->model('vehicle_class_model');
+        $this->_table    = 'app.t_mtr_vehicle_class';
+        $this->_username = $this->session->userdata('username');
+        $this->_module   = 'pelabuhan/vehicle_class';
+
+        $this->dbView=$this->load->database("dbView",True);
+        $this->dbAction=$this->load->database("dbAction",True);
+    }
+
+    public function index(){
+        checkUrlAccess(uri_string(),'view');
+        if($this->input->is_ajax_request()){
+            $rows = $this->vehicle_class_model->vehicleClassList();
+            echo json_encode($rows);
+            exit;
+        }
+
+        $data = array(
+            'home'     => 'Home',
+            'url_home' => site_url('home'),
+            'title'    => 'Golongan Kendaraan',
+            'content'  => 'vehicle_class/index',
+            'btn_add'  => generate_button_new($this->_module, 'add',  site_url($this->_module.'/add'))
+        );
+
+        $this->load->view('default', $data);
+    }
+
+    public function add(){
+        validate_ajax();
+
+        $dataGroupVehicle[""]="Pilih";
+        $dataGroupVehicleType[""]="Pilih";
+
+        $groupVehicle=$this->vehicle_class_model->select_data("app.t_mtr_vehicle_group"," where status=1 order by name asc")->result();
+        $groupVehicleType=$this->vehicle_class_model->select_data("app.t_mtr_vehicle_group_type"," where status=1 order by name asc")->result();
+
+        foreach ($groupVehicle as $key => $value) {
+            $dataGroupVehicle[$this->enc->encode($value->id)]=strtoupper($value->name);
+        }
+
+        foreach ($groupVehicleType as $key => $value) {
+            $dataGroupVehicleType[$this->enc->encode($value->id)]=strtoupper($value->name);
+        }
+
+        $data['title'] = 'Tambah Golongan Kendaraan';
+        $data['class_type'] = $this->vehicle_class_model->select_data("app.t_mtr_vehicle_type"," where status=1 order by id desc")->result();
+        $data['groupVehicle']=$dataGroupVehicle;
+        $data['groupVehicleType']=$dataGroupVehicleType;
+
+        $this->load->view($this->_module.'/add',$data);
+    }
+
+    public function edit($param){
+        validate_ajax();
+
+        $row=$this->vehicle_class_model->select_data($this->_table, " where id=".$this->enc->decode($param)." ")->row();
+        // url devlopment
+        $imgUrl="http://dev.nutech-integrasi.com/asdp_admin/".$row->image_url;
+
+        // url production
+        // $imgUrl="https://tiket.indonesiaferry.co.id/asdp_admin/".$row->image_url;
+
+        if (@imagecreatefromjpeg($imgUrl) or @imagecreatefrompng($imgUrl))
+        {
+            $img="<div class='zoom' ><img src='".$imgUrl."' height='100' width='150' /></div>";
+        }
+        else
+        {
+
+            $img=failed_label("Gambar Tidak Tersedia");
+        }
+
+        $dataGroupVehicle[""]="Pilih";
+        $dataGroupVehicleType[""]="Pilih";
+
+        $selectedGroupVehicle="";
+        $selectedGroupVehicleType="";
+
+        $groupVehicle=$this->vehicle_class_model->select_data("app.t_mtr_vehicle_group"," where status=1 order by name asc")->result();
+        $groupVehicleType=$this->vehicle_class_model->select_data("app.t_mtr_vehicle_group_type"," where status=1 order by name asc")->result();
+
+        foreach ($groupVehicle as $key => $value) {
+            $idEncode=$this->enc->encode($value->id);
+            $dataGroupVehicle[$idEncode]=strtoupper($value->name);
+
+            $row->vehicle_group_id==$value->id?$selectedGroupVehicle=$idEncode:"";
+
+        }
+
+        foreach ($groupVehicleType as $key => $value) {
+            $idEncode=$this->enc->encode($value->id);
+            $dataGroupVehicleType[$idEncode]=strtoupper($value->name);
+
+            $row->vehicle_group_type_id==$value->id?$selectedGroupVehicleType=$idEncode:"";
+        }
+
+
+        $data['id']    = $param;
+        $data['row']   = $row;
+        $data['class_type'] = $this->vehicle_class_model->select_data("app.t_mtr_vehicle_type"," where status=1 order by id desc")->result();
+        $data['img'] = $img;
+        $data['groupVehicle'] = $dataGroupVehicle;
+        $data['selectedGroupVehicle'] = $selectedGroupVehicle;
+        $data['groupVehicleType'] = $dataGroupVehicleType;
+        $data['selectedGroupVehicleType'] = $selectedGroupVehicleType;
+        $data['title'] = 'Edit Golongan Kendaraan';
+        $this->load->view($this->_module.'/edit',$data);
+    }
+
+    public function action_add(){
+        validate_ajax();
+        $post = $this->input->post();
+        $name = trim($post['name']);
+        $capacity_maximum=$post['capacity_maximum'];
+        $weight_maximum=$post['weight_maximum'];
+        $tipe=$this->enc->decode($this->input->post('tipe'));
+        $description=$this->input->post('description');
+        $groupVehicle=$this->enc->decode($this->input->post("groupVehicle"));
+        $groupVehicleType=$this->enc->decode($this->input->post("groupVehicleType"));
+        $total_lm=$this->input->post('total_lm');
+        $wide_lm=$this->input->post('wide_lm');
+        $length_lm=$this->input->post('length_lm');
+
+        // input file upload manual php native, karena issue menggunakan library ci
+        $filename = $_FILES['input_gambar']['name'];       
+        
+        $checking_format_file[]=0;
+        $nama_baru="";
+        if(!empty($filename))
+        {
+            $lokasi = $_FILES['input_gambar']['tmp_name'];
+            $extensi = pathinfo($filename, PATHINFO_EXTENSION); // mengambil extensi file yg di upload 
+            $nama_baru=str_replace(" ","_",$name)."_".date("YmdHis").".".$extensi;
+
+            // strtoupper($extensi)<>"JPG"?$checking_format_file[]=1:"";
+
+            if(strtoupper($extensi)=="JPG" or strtoupper($extensi)=="PNG")
+            {
+                $checking_format_file[]=0;                
+            }
+            else
+            {
+                $checking_format_file[]=1;
+            }
+
+        }
+        
+        /* validation */
+        $this->form_validation->set_rules('name', 'Nama Golongan', 'trim|required')
+        ->set_rules('tipe', 'Tipe Class', 'trim|required')
+        ->set_rules('description', 'Deskripsi', 'trim|required')
+        ->set_rules('groupVehicle', 'Grup Golongan Kendaraan', 'trim|required')
+        ->set_rules('groupVehicleType', 'Grup Tipe Golongan Kendaraan', 'trim|required')
+        ->set_rules('min', 'Panjang Minimum', 'trim|required|numeric|min_length[1]')
+        ->set_rules('max', 'Panjang Maksimal', 'trim|required|numeric|min_length[1]')
+        ->set_rules('weight_maximum', 'Berat Maksimal', 'trim|required|numeric|min_length[1]')
+        ->set_rules('total_lm', 'Luas Linemeter', 'trim|required|numeric')
+        ->set_rules('wide_lm', 'Lebar Linemeter', 'trim|required|numeric')
+        ->set_rules('length_lm', 'Panjang Linemeter', 'trim|required|numeric');
+
+
+        
+
+        $this->form_validation->set_message('required','%s harus diisi!')
+        ->set_message('numeric','%s harus angka!');
+
+        // path kirim data
+        $path_file="./uploads/vehicle_class/".$nama_baru;
+
+        /* data post */
+        $data = array(
+            'vehicle_group_id'=>$groupVehicle,
+            'vehicle_group_type_id'=>$groupVehicleType,
+            'code' => NULL,
+            'name' => $name,
+            'adult_capacity' =>NULL,
+            'child_capacity' =>NULL,
+            'infant_capacity' => NULL,
+            'max_capacity'=>$capacity_maximum,
+            'type'=>$tipe,
+            'min_length' => $post['min'],
+            'max_length' => $post['max'],
+            'default_weight' => $weight_maximum,
+            'description' =>$description,
+            'created_by' =>$this->session->userdata("username"),
+            'created_on' =>date("Y-m-d H:i:s"),
+            'wide_lm'=>$wide_lm,
+            'length_lm'=>$length_lm,
+            'total_lm'=>$total_lm,
+            'status' =>1,
+            'image_url'=>$path_file,
+        );
+
+        // check nama nya tidak boleh sama 
+        $check_name=$this->vehicle_class_model->select_data($this->_table," where upper(name)=upper('".$name."') and status =1");
+
+        if($this->form_validation->run() == FALSE){
+            $response = json_api(0,validation_errors());
+        }
+        else if($check_name->num_rows()>0)
+        {
+            $response = json_api(0,'Nama sudah ada');
+        }
+        else if(array_sum($checking_format_file)>0)
+        {
+            $response=json_api(0," Format File Harus jpg atau png");     
+        }
+        else if(empty($filename))
+        {
+            $response=json_api(0,"File Gambar Harus diisi");     
+        }        
+        else
+        {
+
+            $this->dbAction->trans_begin();
+            
+            $this->vehicle_class_model->insert_data($this->_table,$data);
+
+            if ($this->dbAction->trans_status() === FALSE)
+            {
+                $this->dbAction->trans_rollback();
+                $response=json_api(0, 'Gagal tambah data');
+            }
+            else
+            {
+                $this->dbAction->trans_commit();
+                $response=json_api(1, 'Berhasil tambah data');
+
+                // Menyimpan path 
+                move_uploaded_file($lokasi,$path_file); 
+            }
+
+
+        }
+
+        $this->log_activitytxt->createLog($this->_username, site_url().'pelabuhan/vehicle_class/action_add', 'ADD', json_encode($data), $response); 
+
+        echo $response;
+    }
+
+    public function action_edit(){
+        validate_ajax();
+        $post = $this->input->post();
+
+        // $name = strtoupper(trim($post['name']));
+        $name = trim($post['name']);
+        $capacity_maximum=$post['capacity_maximum'];
+        $tipe=$this->enc->decode($this->input->post('tipe'));
+        $description=$this->input->post('description');
+        $id=$this->enc->decode($this->input->post('vehicle_class'));
+        $oldPath=$this->input->post('oldPath');
+        $groupVehicle=$this->enc->decode($this->input->post("groupVehicle"));
+        $groupVehicleType=$this->enc->decode($this->input->post("groupVehicleType"));
+        $total_lm=trim($this->input->post('total_lm'));
+        $wide_lm=trim($this->input->post('wide_lm'));
+        $length_lm=trim($this->input->post('length_lm'));
+        
+        // input file upload manual php native, karena issue menggunakan library ci
+        $filename = $_FILES['input_gambar']['name'];       
+
+        /* validation */
+        $this->form_validation->set_rules('name', 'Nama Golongan', 'trim|required')
+        ->set_rules('tipe', 'Tipe Class', 'trim|required')
+        ->set_rules('groupVehicle', 'Grup Golongan Kendaraan', 'trim|required')
+        ->set_rules('groupVehicleType', 'Grup Tipe Golongan Kendaraan', 'trim|required')
+        ->set_rules('description', 'Deskripsi', 'trim|required')
+        ->set_rules('min', 'Panjang Minimum', 'trim|required|numeric|min_length[1]')
+        ->set_rules('max', 'Panjang Maksimal', 'trim|required|numeric|min_length[1]')
+        ->set_rules('weight_maximum', 'Berat Maksimal', 'trim|required|numeric|min_length[1]')
+        ->set_rules('total_lm', 'Luas Linemeter', 'trim|required|numeric')
+        ->set_rules('wide_lm', 'Lebar Linemeter', 'trim|required|numeric')
+        ->set_rules('length_lm', 'Panjang Linemeter', 'trim|required|numeric');
+
+        $this->form_validation->set_message('required','%s harus diisi!')
+        ->set_message('numeric','%s harus angka!');
+
+        $checking_format_file[]=0;
+        $nama_baru="";
+        if(!empty($filename))
+        {
+            $lokasi = $_FILES['input_gambar']['tmp_name'];
+            $extensi = pathinfo($filename, PATHINFO_EXTENSION); // mengambil extensi file yg di upload 
+            $nama_baru=str_replace(" ","_",$name)."_".date("YmdHis").".".$extensi;
+            // move_uploaded_file($lokasi, "./uploads/".$nama_baru);
+
+            // strtoupper($extensi)<>"JPG"?$checking_format_file[]=1:"";
+
+            if(strtoupper($extensi)=="JPG" or strtoupper($extensi)=="PNG")
+            {
+                $checking_format_file[]=0;                
+            }
+            else
+            {
+                $checking_format_file[]=1;
+            }                  
+        }
+
+        // path kirim data
+        $path_file="./uploads/vehicle_class/".$nama_baru;
+
+
+        /* data post */
+        $data = array(
+            'name' => $name,
+            'vehicle_group_id'=>$groupVehicle,
+            'vehicle_group_type_id'=>$groupVehicleType,
+            'max_capacity' => $capacity_maximum,
+            'type' =>$tipe,
+            'description' => $description,
+            'min_length' => $post['min'],
+            'max_length' => $post['max'],
+            'default_weight' => $post['weight_maximum'],
+            'total_lm' => $total_lm,
+            'wide_lm' => $wide_lm,
+            'length_lm' => $length_lm,
+            'updated_on'=>date('Y-m-d'),
+            'updated_by'=>$this->session->userdata('username'),
+        );
+
+        $check_name=$this->vehicle_class_model->select_data($this->_table," where upper(name)=upper('".$name."') and status =1 and id!=".$id);
+
+        if($this->form_validation->run() == FALSE){
+            $response = json_api(0,validation_errors());
+        }
+        else if(array_sum($checking_format_file)>0)
+        {
+            $response=json_api(0," Format File Harus jpg atau png");     
+        } 
+        else if($check_name->num_rows()>0)
+        {
+            $response = json_api(0,'Nama sudah ada');   
+        }
+        else
+        {
+
+            $this->dbAction->trans_begin();
+
+            if(!empty($filename))
+            {
+                $data['image_url']=$path_file;
+            }
+
+            $this->vehicle_class_model->update_data($this->_table, $data, "id=$id");
+
+            if ($this->dbAction->trans_status() === FALSE)
+            {
+                $this->dbAction->trans_rollback();
+                $response=json_api(0, 'Gagal edit data');
+            }
+            else
+            {
+                $this->dbAction->trans_commit();
+                $response=json_api(1, 'Berhasil edit data');
+                if(!empty($filename))
+                {
+                    // Menyimpan path 
+                    move_uploaded_file($lokasi,$path_file); 
+
+                    if(@imagecreatefromjpeg($oldPath))
+                    {
+                        // Menghapus path link sebelumnya 
+                        unlink($oldPath);                     
+                    }
+                }
+            }
+            
+        }
+
+        $this->log_activitytxt->createLog($this->_username, uri_string(), 'update', json_encode($data), $response); 
+        echo $response;
+    }
+
+    public function action_delete($param){
+        validate_ajax();
+        $this->global_model->checkAccessMenuAction($this->_module,'delete');
+
+        $id   = $this->enc->decode($param);
+
+        /* data */
+        $data = array(
+          'id' => $id,
+          'status' => -5
+        );
+
+        $this->dbAction->trans_begin();
+
+        $this->vehicle_class_model->update_data($this->_table, $data, "id=$id");
+
+        if ($this->dbAction->trans_status() === FALSE)
+        {
+            $this->dbAction->trans_rollback();
+            $response=json_api(0, 'Gagal hapus data');
+        }
+        else
+        {
+            $this->dbAction->trans_commit();
+            $response=json_api(1, 'Berhasil hapus data');
+
+        }
+
+
+        $this->log_activitytxt->createLog($this->_username, uri_string(), 'delete', json_encode($data), $response); 
+        echo $response;
+    }
+
+    public function enable($param)
+    {
+        validate_ajax();
+        $p = $this->enc->decode($param);
+
+        $d = explode('|', $p);
+
+        /* data */
+        $data = array(
+            'status' => $d[1],
+            'updated_on'=>date("Y-m-d H:i:s"),
+            'updated_by'=>$this->session->userdata('username'),
+        );
+
+        //mencari data nama dengan status yang sama
+        $cari_data=$this->vehicle_class_model->select_data($this->_table," where id=".$this->enc->decode($d[0]))->row();
+
+
+        $check_name=$this->vehicle_class_model->select_data($this->_table," where upper(name)=upper('".trim($cari_data->name)."') and status =1");
+
+        $this->dbAction->trans_begin();
+        $this->vehicle_class_model->update_data($this->_table,$data,"id=".$this->enc->decode($d[0]));
+
+        if ($this->dbAction->trans_status() === FALSE)
+        {
+            $this->dbAction->trans_rollback();
+            echo $res=json_api(0, 'Gagal aktifkan data');
+        }
+        else if($check_name->num_rows()>0)
+        {
+            $this->dbAction->trans_rollback();
+            echo $res=json_api(0, 'Gagal aktifkan data, karena nama sudah ada yang aktif');
+        }
+        else
+        {
+            $this->dbAction->trans_commit();
+            echo $res=json_api(1, 'Berhasil aktifkan data');
+        }
+
+
+        /* Fungsi Create Log */
+        $createdBy   = $this->session->userdata('username');
+        $logUrl      = site_url().'pelabuhan/vehicle_class/enable';
+        $logMethod   = 'Enable';
+        $logParam    = json_encode($data);
+        $logResponse = $res;
+
+        $this->log_activitytxt->createLog($createdBy, $logUrl, $logMethod, $logParam, $logResponse);
+    }
+
+    public function disable($param)
+    {
+        validate_ajax();
+        $p = $this->enc->decode($param);
+
+        $d = explode('|', $p);
+
+        /* data */
+        $data = array(
+            'status' => $d[1],
+            'updated_on'=>date("Y-m-d H:i:s"),
+            'updated_by'=>$this->session->userdata('username'),
+        );
+
+        // check jika ada status=1 dengan nama yang sama
+
+        $this->dbAction->trans_begin();
+        $this->vehicle_class_model->update_data($this->_table,$data,"id=".$this->enc->decode($d[0]));
+
+        if ($this->dbAction->trans_status() === FALSE)
+        {
+            $this->dbAction->trans_rollback();
+            echo $res=json_api(0, 'Gagal dinonaktifkan data');
+        }
+        else
+        {
+            $this->dbAction->trans_commit();
+            echo $res=json_api(1, 'Data berhasil dinonaktifkan ');
+        } 
+
+        /* Fungsi Create Log */
+        $createdBy   = $this->session->userdata('username');
+        $logUrl      = site_url().'pelabuhan/vehicle_class/enable';
+        $logMethod   = 'Disable';
+        $logParam    = json_encode($data);
+        $logResponse = $res;
+
+        $this->log_activitytxt->createLog($createdBy, $logUrl, $logMethod, $logParam, $logResponse);
+    }
+
+}

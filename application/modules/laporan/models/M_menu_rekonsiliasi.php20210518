@@ -1,0 +1,822 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+/**
+ * -----------------------
+ * CLASS NAME : Port_model
+ * -----------------------
+ *
+ * @author     Robai <robai.rastim@gmail.com>
+ * @copyright  2018
+ *
+ */
+
+class M_menu_rekonsiliasi extends MY_Model{
+
+	public function __construct() {
+		parent::__construct();
+        $this->_module = 'laporan/menu_rekonsiliasi';
+
+        // $this->dbView=$this->load->database("dbView",TRUE);
+        $this->dbView=checkReplication();
+	}
+
+    public function dataList(){
+		$start = $this->input->post('start');
+		$length = $this->input->post('length');
+		$draw = $this->input->post('draw');
+		$search = $this->input->post('search');
+		$dateFrom = $this->input->post('dateFrom');
+		$dateTo = $this->input->post('dateTo');
+		$dateFrom2 = $this->input->post('dateFrom2');
+		$dateTo2 = $this->input->post('dateTo2');
+		$dateFrom3 = $this->input->post('dateFrom3');
+		$dateTo3 = $this->input->post('dateTo3');
+		$service = $this->enc->decode($this->input->post('service'));
+		$merchant = $this->enc->decode($this->input->post('merchant'));
+		
+		$status_type = $this->enc->decode($this->input->post('status_type'));
+		$channel = $this->enc->decode($this->input->post('channel'));
+		$order = $this->input->post('order');
+		$order_column = $order[0]['column'];
+		$order_dir = strtoupper($order[0]['dir']);
+		$iLike        = trim(strtoupper($this->dbView->escape_like_str($search['value'])));
+
+		if($this->get_identity_app()==0)
+		{
+			// mengambil port berdasarkan port di user menggunakan session
+	        if(!empty($this->session->userdata('port_id')))
+	        {
+	            $port_origin=$this->session->userdata('port_id');
+	        }
+	        else
+	        {
+	            $port_origin = $this->enc->decode($this->input->post('port_origin'));
+	        }
+		}
+		else
+		{
+			$port_origin=$this->get_identity_app();
+		}
+
+		$field = array(
+			0 =>'id',
+			1 =>'id_trans',
+			2 =>'payment_code',
+			3 =>'booking_code',
+			4 =>'ticket_number',
+			5 =>'merchant_id',
+			6 => 'waktu_trans',
+			7 => 'depart_date',
+			8 => 'waktu_settle',
+			9 => 'asal',
+			10 => 'tujuan',
+			11 => 'ship_class',
+			12 =>'service',
+			13 =>'golongan',
+			14 =>'shop_code',
+			15 =>'shop_name',
+			16 =>'reconn_status',
+			17 =>'tarif_per_jenis',
+			18 => 'admin_fee',
+			19 => 'diskon',
+			20 => 'transfer_asdp',
+			21 => 'code_promo',
+			22 => 'updated_settlement',
+		);
+
+		$order_column = $field[$order_column];
+
+		// $where = " WHERE a.status is not null  and (to_char(a.created_on,'yyyy-mm-dd') between '".$dateFrom."' and '".$dateTo."' ) ";
+
+		$where = " WHERE b.channel='b2b' and a.status = '1'  and (to_char(b.created_on,'yyyy-mm-dd') between '".$dateFrom."' and '".$dateTo."' )  ";		
+
+		if(!empty($service))
+		{
+			$where .= " and (j.id = ".$service.")";
+		}
+		
+		if($status_type != "")
+		{
+			if($status_type == "0"){
+				$where .= " and k.status is null";
+			}
+			else{
+				$where .= " and k.status = '2'";
+			}
+			
+		}
+
+		if(!empty($dateFrom3))
+		{
+			$where .= " and (to_char(b.depart_date,'yyyy-mm-dd')  >='".$dateFrom3."' )";
+		}
+
+		if(!empty($dateTo3))
+		{
+			$where .= " and (to_char(b.depart_date,'yyyy-mm-dd')  <='".$dateTo3."' )";
+		}
+
+		if(!empty($dateFrom3) && !empty($dateTo3))
+		{
+			$where .= " and (to_char(b.depart_date,'yyyy-mm-dd') between '".$dateFrom3."' and '".$dateTo3."' )";
+		}
+
+		if(!empty($dateFrom2))
+		{
+			$where .= " and (to_char(k.settlement_date,'yyyy-mm-dd')  >='".$dateFrom2."' )";
+		}
+
+		if(!empty($dateTo2))
+		{
+			$where .= " and (to_char(k.settlement_date,'yyyy-mm-dd')  <='".$dateTo2."' )";
+		}
+
+		if(!empty($dateFrom2) && !empty($dateTo2))
+		{
+			$where .= " and (to_char(k.settlement_date,'yyyy-mm-dd')  between '".$dateFrom2."' and '".$dateTo2."' )";
+		}
+
+		if(!empty($merchant))
+		{
+			$where .= " and (upper(a.merchant_id)  =upper('".$merchant."') )";
+		}
+
+		if (!empty($search['value'])){
+			$where .= "and (a.trans_number ilike '%".$iLike."%' 
+							or b.booking_code ilike '%".$iLike."%'
+							or a.invoice_number ilike '%".$iLike."%'
+							or f.name ilike '%".$iLike."%' 
+							or e.name ilike '%".$iLike."%' 
+							or a.merchant_id ilike '%".$iLike."%'
+						)";	
+		}
+        // $sql = "select  b.trans_number, b.ref_no, a.booking_code, e.name as service_name, f.name as port_origin, g.name as port_destination,
+		// 			b.created_on, b.amount as total_amount, b.channel, 
+		// 			b.created_by, h.merchant_name, b.recon_status,
+        //             b.*
+        //         from app.t_trx_payment_b2b b 
+		// 			left join app.t_trx_booking a on a.trans_number = b.trans_number
+        //             left join app.t_mtr_service e on a.service_id = e.id 
+        //             left join app.t_mtr_port f on a.origin = f.id
+        //             left join app.t_mtr_port g on a.destination = g.id
+		// 			left join app.t_mtr_merchant h on b.created_by = h.merchant_id
+		//             $where";
+		$sql = "select a.trans_number as id_trans, a.ref_no as payment_code, b.booking_code, 
+						(
+							case
+							when b.service_id = 1
+							then c.ticket_number
+							else d.ticket_number end 
+						) as ticket_number, 
+						a.merchant_id, b.created_on as waktu_trans, b.depart_date, k.settlement_date as waktu_settle,
+						e.name as asal, f.name as tujuan, g.name as ship_class, j.name as service,
+						k.shop_code, k.shop_name, 
+						(
+							case 
+							when k.status_name is null
+							then p.description
+							else k.status_name end
+						) as reconn_status,
+						(
+							case
+							when b.service_id = 1
+							then h.name
+							else i.name end
+						) as golongan,
+						(
+							case
+							when b.service_id = 1
+							then m.fare
+							else n.fare end
+						) as tarif_per_jenis,
+						k.status_name,
+						k.admin_fee, k.diskon, k.transfer_asdp, k.code_promo, k.created_on as updated_settlement, a.*
+					from app.t_trx_payment_b2b a
+					left join app.t_trx_booking b on a.trans_number = b.trans_number
+					left join app.t_trx_booking_passanger c on b.booking_code = c.booking_code and c.service_id = 1
+					left join app.t_trx_booking_vehicle d on b.booking_code = d.booking_code
+					left join app.t_mtr_port e on b.origin = e.id
+					left join app.t_mtr_port f on b.destination = f.id
+					left join app.t_mtr_ship_class g on g.id = b.ship_class
+					left join app.t_mtr_passanger_type h on h.id = c.passanger_type_id 
+					left join app.t_mtr_vehicle_class i on i.id = d.vehicle_class_id
+					left join app.t_mtr_service j on j.id = b.service_id
+					left join app.t_trx_recon_alfamart k on k.trans_number = a.trans_number
+					left join app.t_mtr_rute l on l.origin = e.id and l.destination = f.id
+					left join app.t_mtr_fare_passanger m on m.rute_id = l.id and m.passanger_type = c.passanger_type_id and c.service_id = 1 and m.ship_class = b.ship_class and m.status <> -5
+					left join app.t_mtr_fare_vehicle n on n.rute_id = l.id and n.vehicle_class_id = d.vehicle_class_id and n.ship_class = b.ship_class and n.status <> -5
+					left join app.t_mtr_merchant o on a.merchant_id = o.merchant_id
+					left join app.t_mtr_status p on a.recon_status = p.status and tbl_name = 't_trx_payment_b2b'
+					$where";
+				// union
+				// select a.trans_number as id_trans, a.ref_no as payment_code, b.booking_code,
+				// 	d.ticket_number as ticket_number, a.merchant_id, b.created_on as waktu_trans, b.depart_date, k.settlement_date as waktu_settle,
+				// 		e.name as asal, f.name as tujuan, g.name as ship_class, j.name as service, i.name as golongan, k.shop_code,
+				// 		k.shop_name, 
+				// 		(
+				// 			case 
+				// 			when k.status_name is null
+				// 			then p.description
+				// 			else k.status_name end
+				// 		) as reconn_status,
+				// 		n.fare as tarif_per_jenis, k.status_name,
+				// 		k.admin_fee, k.diskon, k.transfer_asdp, k.code_promo, k.created_on as updated_settlement, a.*
+				// 	from app.t_trx_payment_b2b a
+				// 	left join app.t_trx_booking b on a.trans_number = b.trans_number
+				// 	join app.t_trx_booking_vehicle d on b.booking_code = d.booking_code
+				// 	left join app.t_mtr_port e on b.origin = e.id
+				// 	left join app.t_mtr_port f on b.destination = f.id
+				// 	left join app.t_mtr_ship_class g on g.id = b.ship_class
+				// 	left join app.t_mtr_vehicle_class i on i.id = d.vehicle_class_id
+				// 	left join app.t_mtr_service j on j.id = b.service_id
+				// 	left join app.t_trx_recon_alfamart k on k.trans_number = a.trans_number
+				// 	left join app.t_mtr_rute l on l.origin = e.id and l.destination = f.id
+				// 	left join app.t_mtr_fare_vehicle n on n.rute_id = l.id and n.vehicle_class_id = d.vehicle_class_id and n.ship_class = b.ship_class and n.status <> -5
+				// 	left join app.t_mtr_merchant o on a.merchant_id = o.merchant_id
+				// 	left join app.t_mtr_status p on a.recon_status = p.status and tbl_name = 't_trx_payment_b2b'
+				// 	$where
+
+		$query         = $this->dbView->query($sql);
+		$records_total = $query->num_rows();
+		$sql 		  .= " ORDER BY ".$order_column." {$order_dir}, id_trans, ticket_number";
+
+		if($length != -1){
+			$sql .=" LIMIT {$length} OFFSET {$start}";
+		}
+
+		$query     = $this->dbView->query($sql);
+		$rows_data = $query->result();
+
+		$rows 	= array();
+		$i  	= ($start + 1);
+
+		foreach ($rows_data as $row) {
+			$row->number = $i;
+			$row->tarif_per_jenis=idr_currency($row->tarif_per_jenis);
+			if ($row->reconn_status == "Not Paid") {
+				$row->reconn_status = warning_label("Not Paid");
+			}
+			else if ($row->reconn_status == "paid"){
+				$row->reconn_status = success_label("Paid");
+			}
+
+			$nonaktif = site_url($this->_module."/disable/".$this->enc->encode($row->id.'|-1'));
+     		$aktif = site_url($this->_module."/enable/".$this->enc->encode($row->id.'|1'));
+
+			$id=$this->enc->encode($row->id);
+			$edit_url 	 = site_url($this->_module."/edit/{$id}");
+     		$delete_url  = site_url($this->_module."/action_delete/{$id}");
+
+     		
+     		// $row->total_amount=idr_currency($row->total_amount);
+     		$row->created_on=format_dateTimeHis($row->created_on);
+     		$row->no=$i;
+
+			$rows[] = $row;
+			// unset($row->id);
+
+			$i++;
+		}
+
+		return array(
+			'draw'           => $draw,
+			'recordsTotal'   => $records_total,
+			'recordsFiltered'=> $records_total,
+			'data'           => $rows
+		);
+	}
+
+	public function total()
+	{
+		$start = $this->input->post('start');
+		$length = $this->input->post('length');
+		$draw = $this->input->post('draw');
+		// $search = $this->input->post('search');
+		$dateFrom = $this->input->post('dateFrom');
+		$dateTo = $this->input->post('dateTo');
+		$dateFrom2 = $this->input->post('dateFrom2');
+		$dateTo2 = $this->input->post('dateTo2');
+		$dateFrom3 = $this->input->post('dateFrom3');
+		$dateTo3 = $this->input->post('dateTo3');
+		$service = $this->enc->decode($this->input->post('service'));
+		$merchant = $this->enc->decode($this->input->post('merchant'));
+		$search = $this->input->post("search");
+        $iLike = trim($this->dbView->escape_like_str($search));
+		$status_type = $this->enc->decode($this->input->post('status_type'));
+		$channel = $this->enc->decode($this->input->post('channel'));
+		$order = $this->input->post('order');
+		$order_column = $order[0]['column'];
+		$order_dir = strtoupper($order[0]['dir']);
+		// $iLike        = trim(strtoupper($this->dbView->escape_like_str($search['value'])));
+
+		if($this->get_identity_app()==0)
+		{
+			// mengambil port berdasarkan port di user menggunakan session
+	        if(!empty($this->session->userdata('port_id')))
+	        {
+	            $port_origin=$this->session->userdata('port_id');
+	        }
+	        else
+	        {
+	            $port_origin = $this->enc->decode($this->input->post('port_origin'));
+	        }
+		}
+		else
+		{
+			$port_origin=$this->get_identity_app();
+		}
+
+		// $field = array(
+		// 	0 =>'jumlah_transaksi',
+		// 	1 =>'total_transaksi',						
+		// );
+
+		// $order_column = $field[$order_column];
+
+		// $where = " WHERE a.status is not null  and (to_char(a.created_on,'yyyy-mm-dd') between '".$dateFrom."' and '".$dateTo."' ) ";
+
+		$where = " WHERE b.channel='b2b' and a.status = '1'  and (to_char(b.created_on,'yyyy-mm-dd') between '".$dateFrom."' and '".$dateTo."' ) ";
+		$where2 = " WHERE b.channel='b2b' and a.status = '1' and k.status = '2'  and (to_char(b.created_on,'yyyy-mm-dd') between '".$dateFrom."' and '".$dateTo."' ) ";
+		$where3 = " WHERE b.channel='b2b' and a.status = '1' and k.status is null  and (to_char(b.created_on,'yyyy-mm-dd') between '".$dateFrom."' and '".$dateTo."' )  ";		
+
+		if(!empty($service))
+		{
+			$where .= " and (j.id = ".$service.")";
+			$where2 .= " and (j.id = ".$service.")";
+			$where3 .= " and (j.id = ".$service.")";
+		}
+		
+		if($status_type != "")
+		{
+			if($status_type == "0"){
+				$where .= " and k.status is null"; //jumlah trans sama dengan jumlah belum dibayar
+				$where2 .= "and a.recon_status = '1'"; //jumlah dibayar tidak ada
+				// $where3 .= "and a.recon_status = '1'";
+			}
+			else{
+				$where .= " and k.status = '2'"; //jumlah trans sama dengan jumlah dibayar
+				$where3 .= "and a.recon_status = '1'"; //jumlah belum dibayar tidak ada
+			}
+		}
+
+		if(!empty($dateFrom2))
+		{
+			$where .= " and k.status = '2' and (to_char(k.settlement_date,'yyyy-mm-dd')  >='".$dateFrom2."' )";
+			$where2 .= " and (to_char(k.settlement_date,'yyyy-mm-dd')  >='".$dateFrom2."' )";
+			$where3 .= "  and a.recon_status = '1' and (to_char(k.settlement_date,'yyyy-mm-dd')  >='".$dateFrom2."' )";
+		}
+
+		if(!empty($dateTo2))
+		{
+			$where .= " and (to_char(k.settlement_date,'yyyy-mm-dd')  <='".$dateTo2."' ) and k.status = '2'";
+			$where2 .= " and (to_char(k.settlement_date,'yyyy-mm-dd')  <='".$dateTo2."' )";
+			$where3 .= " and (to_char(k.settlement_date,'yyyy-mm-dd')  <='".$dateTo2."' ) and a.recon_status = '1'";
+		}
+
+		if(!empty($dateFrom2) && !empty($dateTo2))
+		{
+			$where .= " and (to_char(k.settlement_date,'yyyy-mm-dd')  between '".$dateFrom2."' and '".$dateTo2."' ) and k.status = '2'";
+			$where2 .= " and (to_char(k.settlement_date,'yyyy-mm-dd')  between '".$dateFrom2."' and '".$dateTo2."' ) ";
+			$where3 .= " and (to_char(k.settlement_date,'yyyy-mm-dd')  between '".$dateFrom2."' and '".$dateTo2."' ) and a.recon_status = '1'";
+		}
+
+		if(!empty($dateFrom3))
+		{
+			$where .= " and (to_char(b.depart_date,'yyyy-mm-dd')  >='".$dateFrom3."' )";
+			$where2 .= " and (to_char(b.depart_date,'yyyy-mm-dd')  >='".$dateFrom3."' )";
+			$where3 .= " and (to_char(b.depart_date,'yyyy-mm-dd')  >='".$dateFrom3."' )";
+		}
+
+		if(!empty($dateTo3))
+		{
+			$where .= " and (to_char(b.depart_date,'yyyy-mm-dd')  <='".$dateTo3."' )";
+			$where2 .= " and (to_char(b.depart_date,'yyyy-mm-dd')  <='".$dateTo3."' )";
+			$where3 .= " and (to_char(b.depart_date,'yyyy-mm-dd')  <='".$dateTo3."' )";
+		}
+
+		if(!empty($dateFrom3) && !empty($dateTo3))
+		{
+			$where .= " and (to_char(b.depart_date,'yyyy-mm-dd') between '".$dateFrom3."' and '".$dateTo3."' )";
+			$where2 .= " and (to_char(b.depart_date,'yyyy-mm-dd') between '".$dateFrom3."' and '".$dateTo3."' )";
+			$where3 .= " and (to_char(b.depart_date,'yyyy-mm-dd') between '".$dateFrom3."' and '".$dateTo3."' )";
+		}
+
+		if(!empty($merchant))
+		{
+			$where .= " and (upper(a.merchant_id)  =upper('".$merchant."') )";
+			$where2 .= " and (upper(a.merchant_id)  =upper('".$merchant."') )";
+			$where3 .= " and (upper(a.merchant_id)  =upper('".$merchant."') )";
+		}
+
+		if (!empty($search)){
+			$where .= "and (a.trans_number ilike '%".$iLike."%' 
+							or b.booking_code ilike '%".$iLike."%'
+							or a.invoice_number ilike '%".$iLike."%'
+							or f.name ilike '%".$iLike."%' 
+							or e.name ilike '%".$iLike."%' 
+							or a.merchant_id ilike '%".$iLike."%'
+						)";
+			$where2 .= "and (a.trans_number ilike '%".$iLike."%' 
+							or b.booking_code ilike '%".$iLike."%'
+							or a.invoice_number ilike '%".$iLike."%'
+							or f.name ilike '%".$iLike."%' 
+							or e.name ilike '%".$iLike."%' 
+							or a.merchant_id ilike '%".$iLike."%'
+						)";	
+			$where3 .= "and (a.trans_number ilike '%".$iLike."%' 
+							or b.booking_code ilike '%".$iLike."%'
+							or a.invoice_number ilike '%".$iLike."%'
+							or f.name ilike '%".$iLike."%' 
+							or e.name ilike '%".$iLike."%' 
+							or a.merchant_id ilike '%".$iLike."%'
+						)";		
+		}
+		$sql = "select count(distinct id_trans) as jumlah_transaksi, sum(tarif_per_jenis) as total_transaksi
+				from(
+					select a.trans_number as id_trans, a.ref_no as payment_code, b.booking_code, 
+					(
+						case
+						when b.service_id = 1
+						then c.ticket_number
+						else d.ticket_number end 
+					) as ticket_number, 
+					a.merchant_id, b.created_on as waktu_trans, b.depart_date, k.settlement_date as waktu_settle,
+					e.name as asal, f.name as tujuan, g.name as ship_class, j.name as service, h.name as golongan,
+					k.shop_code, k.shop_name, 
+					(
+						case 
+						when k.status_name is null
+						then p.description
+						else k.status_name end
+					) as reconn_status,
+					(
+						case
+						when b.service_id = 1
+						then m.fare
+						else n.fare end
+					) as tarif_per_jenis,
+					k.status_name,
+					k.admin_fee, k.diskon, k.transfer_asdp, k.code_promo, k.created_on as updated_settlement, a.*
+				from app.t_trx_payment_b2b a
+				left join app.t_trx_booking b on a.trans_number = b.trans_number
+				left join app.t_trx_booking_passanger c on b.booking_code = c.booking_code and c.service_id = 1
+				left join app.t_trx_booking_vehicle d on b.booking_code = d.booking_code
+				left join app.t_mtr_port e on b.origin = e.id
+				left join app.t_mtr_port f on b.destination = f.id
+				left join app.t_mtr_ship_class g on g.id = b.ship_class
+				left join app.t_mtr_passanger_type h on h.id = c.passanger_type_id 
+				left join app.t_mtr_service j on j.id = b.service_id
+				left join app.t_trx_recon_alfamart k on k.trans_number = a.trans_number
+				left join app.t_mtr_rute l on l.origin = e.id and l.destination = f.id
+				left join app.t_mtr_fare_passanger m on m.rute_id = l.id and m.passanger_type = c.passanger_type_id and c.service_id = 1 and m.ship_class = b.ship_class and m.status <> -5
+				left join app.t_mtr_fare_vehicle n on n.rute_id = l.id and n.vehicle_class_id = d.vehicle_class_id and n.ship_class = b.ship_class and n.status <> -5
+				left join app.t_mtr_merchant o on a.merchant_id = o.merchant_id
+				left join app.t_mtr_status p on a.recon_status = p.status and tbl_name = 't_trx_payment_b2b'
+				$where) as rekon";
+				// union
+				// select a.trans_number as id_trans, a.invoice_number as payment_code, b.booking_code,
+				// 	d.ticket_number as ticket_number, a.merchant_id, b.created_on as waktu_trans, b.depart_date, k.settlement_date as waktu_settle,
+				// 		e.name as asal, f.name as tujuan, g.name as ship_class, j.name as service, i.name as golongan, k.shop_code,
+				// 		k.shop_name, a.recon_status, n.fare as tarif_per_jenis,
+				// 		k.admin_fee, k.diskon, k.transfer_asdp, k.code_promo, k.updated_on as updated_settlement, a.*
+				// 	from app.t_trx_payment_b2b a
+				// 	left join app.t_trx_booking b on a.trans_number = b.trans_number
+				// 	join app.t_trx_booking_vehicle d on b.booking_code = d.booking_code
+				// 	left join app.t_mtr_port e on b.origin = e.id
+				// 	left join app.t_mtr_port f on b.destination = f.id
+				// 	left join app.t_mtr_ship_class g on g.id = b.ship_class
+				// 	left join app.t_mtr_vehicle_class i on i.id = d.vehicle_class_id
+				// 	left join app.t_mtr_service j on j.id = b.service_id
+				// 	left join app.t_trx_recon_alfamart k on k.trans_number = a.trans_number
+				// 	left join app.t_mtr_rute l on l.origin = e.id and l.destination = f.id
+				// 	left join app.t_mtr_fare_vehicle n on n.rute_id = l.id and n.vehicle_class_id = d.vehicle_class_id and n.ship_class = b.ship_class and n.status <> -5
+				// 	left join app.t_mtr_merchant o on a.merchant_id = o.merchant_id
+				// 	$where) as rekon";
+					
+		$sql2 = "select count(distinct id_trans) as jumlah_dibayar, sum(tarif_per_jenis) as total_dibayar
+				from(
+				select a.trans_number as id_trans, a.invoice_number as payment_code, b.booking_code, c.ticket_number 
+						as ticket_number, a.merchant_id, b.created_on as waktu_trans, b.depart_date, k.settlement_date as waktu_settle,
+						e.name as asal, f.name as tujuan, g.name as ship_class, j.name as service, h.name as golongan, k.shop_code,
+						k.shop_name, a.recon_status, m.fare as tarif_per_jenis,
+						k.admin_fee, k.diskon, k.transfer_asdp, k.code_promo, k.updated_on as updated_settlement, a.*
+					from app.t_trx_payment_b2b a
+					left join app.t_trx_booking b on a.trans_number = b.trans_number
+					left join app.t_trx_booking_passanger c on b.booking_code = c.booking_code
+					left join app.t_mtr_port e on b.origin = e.id
+					left join app.t_mtr_port f on b.destination = f.id
+					left join app.t_mtr_ship_class g on g.id = b.ship_class
+					left join app.t_mtr_passanger_type h on h.id = c.passanger_type_id 
+					left join app.t_mtr_service j on j.id = b.service_id
+					left join app.t_trx_recon_alfamart k on k.trans_number = a.trans_number
+					left join app.t_mtr_rute l on l.origin = e.id and l.destination = f.id
+					left join app.t_mtr_fare_passanger m on m.rute_id = l.id and m.passanger_type = c.passanger_type_id and c.service_id = 1 and m.ship_class = b.ship_class and m.status <> -5
+					left join app.t_mtr_merchant o on a.merchant_id = o.merchant_id
+					$where2
+				union
+				select a.trans_number as id_trans, a.invoice_number as payment_code, b.booking_code,
+					d.ticket_number as ticket_number, a.merchant_id, b.created_on as waktu_trans, b.depart_date, k.settlement_date as waktu_settle,
+						e.name as asal, f.name as tujuan, g.name as ship_class, j.name as service, i.name as golongan, k.shop_code,
+						k.shop_name, a.recon_status, n.fare as tarif_per_jenis,
+						k.admin_fee, k.diskon, k.transfer_asdp, k.code_promo, k.updated_on as updated_settlement, a.*
+					from app.t_trx_payment_b2b a
+					left join app.t_trx_booking b on a.trans_number = b.trans_number
+					join app.t_trx_booking_vehicle d on b.booking_code = d.booking_code
+					left join app.t_mtr_port e on b.origin = e.id
+					left join app.t_mtr_port f on b.destination = f.id
+					left join app.t_mtr_ship_class g on g.id = b.ship_class
+					left join app.t_mtr_vehicle_class i on i.id = d.vehicle_class_id
+					left join app.t_mtr_service j on j.id = b.service_id
+					left join app.t_trx_recon_alfamart k on k.trans_number = a.trans_number
+					left join app.t_mtr_rute l on l.origin = e.id and l.destination = f.id
+					left join app.t_mtr_fare_vehicle n on n.rute_id = l.id and n.vehicle_class_id = d.vehicle_class_id and n.ship_class = b.ship_class and n.status <> -5
+					left join app.t_mtr_merchant o on a.merchant_id = o.merchant_id
+					$where2) as rekon";
+			
+			$sql3 = "select count(distinct id_trans) as jumlah_belum, sum(tarif_per_jenis) as total_belum
+				from(
+				select a.trans_number as id_trans, a.invoice_number as payment_code, b.booking_code, c.ticket_number 
+						as ticket_number, a.merchant_id, b.created_on as waktu_trans, b.depart_date, k.settlement_date as waktu_settle,
+						e.name as asal, f.name as tujuan, g.name as ship_class, j.name as service, h.name as golongan, k.shop_code,
+						k.shop_name, a.recon_status, m.fare as tarif_per_jenis,
+						k.admin_fee, k.diskon, k.transfer_asdp, k.code_promo, k.updated_on as updated_settlement, a.*
+					from app.t_trx_payment_b2b a
+					left join app.t_trx_booking b on a.trans_number = b.trans_number
+					left join app.t_trx_booking_passanger c on b.booking_code = c.booking_code
+					left join app.t_mtr_port e on b.origin = e.id
+					left join app.t_mtr_port f on b.destination = f.id
+					left join app.t_mtr_ship_class g on g.id = b.ship_class
+					left join app.t_mtr_passanger_type h on h.id = c.passanger_type_id 
+					left join app.t_mtr_service j on j.id = b.service_id
+					left join app.t_trx_recon_alfamart k on k.trans_number = a.trans_number
+					left join app.t_mtr_rute l on l.origin = e.id and l.destination = f.id
+					left join app.t_mtr_fare_passanger m on m.rute_id = l.id and m.passanger_type = c.passanger_type_id and c.service_id = 1 and m.ship_class = b.ship_class and m.status <> -5
+					left join app.t_mtr_merchant o on a.merchant_id = o.merchant_id
+					$where3
+				union
+				select a.trans_number as id_trans, a.invoice_number as payment_code, b.booking_code,
+					d.ticket_number as ticket_number, a.merchant_id, b.created_on as waktu_trans, b.depart_date, k.settlement_date as waktu_settle,
+						e.name as asal, f.name as tujuan, g.name as ship_class, j.name as service, i.name as golongan, k.shop_code,
+						k.shop_name, a.recon_status, n.fare as tarif_per_jenis,
+						k.admin_fee, k.diskon, k.transfer_asdp, k.code_promo, k.updated_on as updated_settlement, a.*
+					from app.t_trx_payment_b2b a
+					left join app.t_trx_booking b on a.trans_number = b.trans_number
+					join app.t_trx_booking_vehicle d on b.booking_code = d.booking_code
+					left join app.t_mtr_port e on b.origin = e.id
+					left join app.t_mtr_port f on b.destination = f.id
+					left join app.t_mtr_ship_class g on g.id = b.ship_class
+					left join app.t_mtr_vehicle_class i on i.id = d.vehicle_class_id
+					left join app.t_mtr_service j on j.id = b.service_id
+					left join app.t_trx_recon_alfamart k on k.trans_number = a.trans_number
+					left join app.t_mtr_rute l on l.origin = e.id and l.destination = f.id
+					left join app.t_mtr_fare_vehicle n on n.rute_id = l.id and n.vehicle_class_id = d.vehicle_class_id and n.ship_class = b.ship_class and n.status <> -5
+					left join app.t_mtr_merchant o on a.merchant_id = o.merchant_id
+					$where3) as rekon";
+
+		// $query         = $this->dbView->query($sql);
+		// $records_total = $query->num_rows();
+		
+		// $sql 		  .= " ORDER BY ".$order_column." {$order_dir}";
+
+		// if($length != -1){
+		// 	$sql .=" LIMIT {$length} OFFSET {$start}";
+		// }
+
+		$query     = $this->dbView->query($sql);
+		$rows_data = $query->result();
+		$query2     = $this->dbView->query($sql2);
+		$rows_data2 = $query2->result();
+		$query3     = $this->dbView->query($sql3);
+		$rows_data3 = $query3->result();
+
+		$rows 	= array();
+		$i  	= ($start + 1);
+
+		foreach ($rows_data as $row) {
+			// $row->number = $i;
+			// $nonaktif = site_url($this->_module."/disable/".$this->enc->encode($row->id.'|-1'));
+     		// $aktif = site_url($this->_module."/enable/".$this->enc->encode($row->id.'|1'));
+
+			// $id=$this->enc->encode($row->id);
+			// $edit_url 	 = site_url($this->_module."/edit/{$id}");
+     		// $delete_url  = site_url($this->_module."/action_delete/{$id}");
+
+     		
+     		$row->total_transaksi=idr_currency($row->total_transaksi);
+     		// $row->created_on=format_dateTimeHis($row->created_on);
+     		// $row->no=$i;
+
+			$rows1[] = $row;
+			// unset($row->id);
+
+			$i++;
+		}
+		foreach ($rows_data2 as $row) {
+			$row->total_dibayar=idr_currency($row->total_dibayar);
+			$rows2[] = $row;
+		}
+		foreach ($rows_data3 as $row) {
+			$row->total_belum=idr_currency($row->total_belum);
+			$rows3[] = $row;
+		}
+		$rows[] = array_merge($rows1,$rows2,$rows3);
+		return array(
+			'data'           => $rows
+		);
+	}
+
+	public function select_data($table, $where="")
+	{
+		return $this->dbView->query("select * from $table $where");
+	}
+
+	public function insert_data($table,$data)
+	{
+		$this->dbView->insert($table, $data);
+	}
+
+	public function update_data($table,$data,$where)
+	{
+		$this->dbView->where($where);
+		$this->dbView->update($table, $data);
+	}
+
+	public function delete_data($table,$data,$where)
+	{
+		$this->dbView->where($where);
+		$this->dbView->delete($table, $data);
+	}
+
+    public function download(){
+        $dateFrom = $this->input->get("dateFrom");
+		$dateTo = $this->input->get("dateTo");
+		$dateFrom2 = $this->input->get("dateFrom2");
+		$dateTo2 = $this->input->get("dateTo2");
+		$dateFrom3 = $this->input->get("dateFrom3");
+        $dateTo3 = $this->input->get("dateTo3");
+        $service = $this->enc->decode($this->input->get("service"));
+        $merchant = $this->enc->decode($this->input->get("merchant"));
+		$status_type = $this->enc->decode($this->input->get('status_type'));
+		
+        $search = $this->input->get("search");
+        $iLike = trim($this->dbView->escape_like_str($search));
+
+        // mengambil port berdasarkan port di user menggunakan session
+		if($this->get_identity_app()==0)
+		{
+			// mengambil port berdasarkan port di user menggunakan session
+	        if(!empty($this->session->userdata('port_id')))
+	        {
+	            $port_origin=$this->session->userdata('port_id');
+	        }
+	        else
+	        {
+	            $port_origin = $this->enc->decode($this->input->get('port_origin'));
+	        }
+		}
+		else
+		{
+			$port_origin=$this->get_identity_app();
+		}
+
+		// $where = " WHERE a.status is not null  and (to_char(a.created_on,'yyyy-mm-dd') between '".$dateFrom."' and '".$dateTo."' ) ";
+
+		// $where = " WHERE b.channel='b2b'  and (to_char(b.created_on,'yyyy-mm-dd') between '".$dateFrom."' and '".$dateTo."' ) ";		
+
+		$where = " WHERE b.channel='b2b' and a.status = '1'  and (to_char(b.created_on,'yyyy-mm-dd') between '".$dateFrom."' and '".$dateTo."' )  ";		
+
+		if(!empty($service))
+		{
+			$where .= " and (j.id = ".$service.")";
+		}
+		
+		if($status_type != "")
+		{
+			if($status_type == "0"){
+				$where .= " and k.status is null";
+			}
+			else{
+				$where .= " and k.status = '2'";
+			}
+			
+		}
+
+		if(!empty($dateFrom3))
+		{
+			$where .= " and (to_char(b.depart_date,'yyyy-mm-dd')  >='".$dateFrom3."' )";
+		}
+
+		if(!empty($dateTo3))
+		{
+			$where .= " and (to_char(b.depart_date,'yyyy-mm-dd')  <='".$dateTo3."' )";
+		}
+
+		if(!empty($dateFrom3) && !empty($dateTo3))
+		{
+			$where .= " and (to_char(b.depart_date,'yyyy-mm-dd') between '".$dateFrom3."' and '".$dateTo3."' )";
+		}
+
+		if(!empty($dateFrom2))
+		{
+			$where .= " and (to_char(k.settlement_date,'yyyy-mm-dd')  >='".$dateFrom2."' )";
+		}
+
+		if(!empty($dateTo2))
+		{
+			$where .= " and (to_char(k.settlement_date,'yyyy-mm-dd')  <='".$dateTo2."' )";
+		}
+
+		if(!empty($dateFrom2) && !empty($dateTo2))
+		{
+			$where .= " and (to_char(k.settlement_date,'yyyy-mm-dd')  between '".$dateFrom2."' and '".$dateTo2."' )";
+		}
+
+		if(!empty($merchant))
+		{
+			$where .= " and (upper(a.merchant_id)  =upper('".$merchant."') )";
+		}
+
+		if (!empty($search)){
+			$where .= "and (a.trans_number ilike '%".$iLike."%' 
+							or b.booking_code ilike '%".$iLike."%'
+							or a.invoice_number ilike '%".$iLike."%'
+							or f.name ilike '%".$iLike."%' 
+							or e.name ilike '%".$iLike."%' 
+							or a.merchant_id ilike '%".$iLike."%'
+						)";	
+		}
+
+		$sql = "select a.trans_number as id_trans, a.ref_no as payment_code, b.booking_code, 
+						(
+							case
+							when b.service_id = 1
+							then c.ticket_number
+							else d.ticket_number end 
+						) as ticket_number, 
+						a.merchant_id, b.created_on as waktu_trans, b.depart_date, k.settlement_date as waktu_settle,
+						e.name as asal, f.name as tujuan, g.name as ship_class, j.name as service,
+						k.shop_code, k.shop_name, 
+						(
+							case 
+							when k.status_name is null
+							then p.description
+							else k.status_name end
+						) as reconn_status,
+						(
+							case
+							when b.service_id = 1
+							then h.name
+							else i.name end
+						) as golongan,
+						(
+							case
+							when b.service_id = 1
+							then m.fare
+							else n.fare end
+						) as tarif_per_jenis,
+						k.status_name,
+						k.admin_fee, k.diskon, k.transfer_asdp, k.code_promo, k.created_on as updated_settlement, a.*
+					from app.t_trx_payment_b2b a
+					left join app.t_trx_booking b on a.trans_number = b.trans_number
+					left join app.t_trx_booking_passanger c on b.booking_code = c.booking_code and c.service_id = 1
+					left join app.t_trx_booking_vehicle d on b.booking_code = d.booking_code
+					left join app.t_mtr_port e on b.origin = e.id
+					left join app.t_mtr_port f on b.destination = f.id
+					left join app.t_mtr_ship_class g on g.id = b.ship_class
+					left join app.t_mtr_passanger_type h on h.id = c.passanger_type_id 
+					left join app.t_mtr_vehicle_class i on i.id = d.vehicle_class_id
+					left join app.t_mtr_service j on j.id = b.service_id
+					left join app.t_trx_recon_alfamart k on k.trans_number = a.trans_number
+					left join app.t_mtr_rute l on l.origin = e.id and l.destination = f.id
+					left join app.t_mtr_fare_passanger m on m.rute_id = l.id and m.passanger_type = c.passanger_type_id and c.service_id = 1 and m.ship_class = b.ship_class and m.status <> -5
+					left join app.t_mtr_fare_vehicle n on n.rute_id = l.id and n.vehicle_class_id = d.vehicle_class_id and n.ship_class = b.ship_class and n.status <> -5
+					left join app.t_mtr_merchant o on a.merchant_id = o.merchant_id
+					left join app.t_mtr_status p on a.recon_status = p.status and tbl_name = 't_trx_payment_b2b'
+					$where
+				ORDER BY waktu_trans DESC";
+
+		$query     = $this->dbView->query($sql);
+		
+		return $query;
+	}
+
+	public function get_identity_app()
+	{
+		$data=$this->dbView->query(" select * from app.t_mtr_identity_app")->row();
+
+		return $data->port_id;
+	}
+
+	function get_channel(){
+		$data  = array(''=>'Pilih');
+		$query = $this->dbView->query(" SELECT DISTINCT channel FROM app.t_trx_invoice where channel<>'' ORDER BY channel asc ")->result();
+
+		foreach ($query as $key => $value) {
+		 	$data[$this->enc->encode($value->channel)] = strtoupper(str_replace('_', ' ', $value->channel));
+		 } 
+
+		return array_unique($data);
+	}
+
+}
