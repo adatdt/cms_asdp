@@ -1,5 +1,5 @@
 <script async defer
-    src="https://maps.google.com/maps/api/js?key=AIzaSyDk_JhHOVjSy5xU4FnKUXcomihclcuU170&q=Space+Needle,Seattle+WA&sensor=false&libraries=places&v=weekly">
+    src="https://maps.google.com/maps/api/js?key=&q=Space+Needle,Seattle+WA&sensor=false&libraries=places&v=weekly">
 </script>
 <script>
     function initMapView(getLat, getLong, radius) {

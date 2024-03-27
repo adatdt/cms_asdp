@@ -225,7 +225,7 @@
 <script src="<?php echo base_url(); ?>assets/global/plugins/bootstrap-tagsinput/bootstrap-tagsinput.js"></script>
 <script src="<?php echo base_url() ?>assets/js/jquery-easyui-1.5.3/jquery.easyui.min.js"></script>
 <script async defer
-    src="https://maps.google.com/maps/api/js?key=AIzaSyDk_JhHOVjSy5xU4FnKUXcomihclcuU170&q=Space+Needle,Seattle+WA&sensor=false&callback=initMap">
+    src="https://maps.google.com/maps/api/js?key=key0&q=Space+Needle,Seattle+WA&sensor=false&callback=initMap">
 </script>
 <script type="text/javascript">
     let setChannel = new Set();
