@@ -55,13 +55,7 @@ date_default_timezone_set('Asia/Jakarta');
  * NOTE: If you change these, also change the error_reporting() code below
  */
 	define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : 'local');
-	// define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : 'development');
-	// define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : 'prod_ketapang');
-	// define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : 'prod_merak');
-	// define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : 'prod_neucentrix_jak');
-	// define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : 'prod_bakau');
-	// define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : 'development71');
-
+	
 /*
  *---------------------------------------------------------------
  * ERROR REPORTING
@@ -73,25 +67,7 @@ date_default_timezone_set('Asia/Jakarta');
 switch (ENVIRONMENT)
 {
 	case 'local':
-	case 'development':
-		error_reporting(-1);
-		ini_set('display_errors', 1);
-	case 'prod_ketapang':
-		error_reporting(-1);
-		ini_set('display_errors', 1);
-	case 'prod_merak':
-		error_reporting(-1);
-		ini_set('display_errors', 1);
-	case 'prod_neucentrix_jak':
-		error_reporting(-1);
-		ini_set('display_errors', 1);
-case 'development71':
-			error_reporting(-1);
-			ini_set('display_errors', 1);		
-
-	case 'prod_bakau':
-		error_reporting(-1);
-		ini_set('display_errors', 1);		
+		
 	break;
 
 	case 'testing':
